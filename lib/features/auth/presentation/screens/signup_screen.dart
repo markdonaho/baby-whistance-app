@@ -9,7 +9,10 @@ class SignupScreen extends ConsumerStatefulWidget { // Extend ConsumerStatefulWi
   const SignupScreen({super.key});
 
   @override
-  ConsumerState<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() {
+    print('[SignupScreen] createState() CALLED');
+    return _SignupScreenState();
+  }
 }
 
 class _SignupScreenState extends ConsumerState<SignupScreen> { // Extend ConsumerState
@@ -20,32 +23,69 @@ class _SignupScreenState extends ConsumerState<SignupScreen> { // Extend Consume
   // bool _isLoading = false; // isLoading will be handled by AsyncValue from controller
   // String? _errorMessage; // error messages will be handled by AsyncValue from controller
 
+  @override
+  void initState() {
+    super.initState();
+    print('[SignupScreen] initState() CALLED');
+  }
+
   Future<void> _signUp() async {
+    print('[SignupScreen] _signUp CALLED.');
     if (_formKey.currentState!.validate()) {
+      print('[SignupScreen] Form is valid.');
       // No local isLoading or errorMessage state needed when using AsyncNotifier
-      await ref.read(authControllerProvider.notifier).signUpWithEmailAndPassword(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-            _displayNameController.text.trim(), // Pass display name
+      try {
+        print('[SignupScreen] Calling authController.signUpWithEmailAndPassword...');
+        await ref.read(authControllerProvider.notifier).signUpWithEmailAndPassword(
+              _emailController.text.trim(),
+              _passwordController.text.trim(),
+              _displayNameController.text.trim(), // Pass display name
+            );
+        print('[SignupScreen] authController.signUpWithEmailAndPassword COMPLETED.');
+      } catch (e, stackTrace) {
+        print('[SignupScreen] ERROR during signUpWithEmailAndPassword: $e');
+        print('[SignupScreen] StackTrace: $stackTrace');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Signup failed: ${e.toString()}')),
           );
+        }
+        return; // Don't proceed if signup failed
+      }
       // Navigation to /verify-email or other state handling will be managed
       // by the router listening to authStateChangesProvider or by the controller state itself.
       // We might still want a local check here if the controller doesn't throw an error that stops execution.
 
-      if (!mounted) return; // Check if widget is still mounted before using ref
+      if (!mounted) {
+        print('[SignupScreen] Widget NOT MOUNTED after signup call. Returning.');
+        return; 
+      }
+      print('[SignupScreen] Widget IS MOUNTED after signup call.');
+      
       final authState = ref.read(authControllerProvider);
+      print('[SignupScreen] Current authState before navigation: User: ${authState.value?.uid}, Verified: ${authState.value?.emailVerified}, HasError: ${authState.hasError}, IsLoading: ${authState.isLoading}');
+
       if (!authState.hasError) {
-         // Consider navigating only if signup didn't immediately result in an error state
-         // and the user object is available (though email might not be verified yet)
-         // The router should handle redirection to /verify-email based on auth state.
-         // If not automatically redirecting, explicitly navigate:
-         // context.goNamed(AppRoute.verifyEmail.name); 
-      } 
+         print('[SignupScreen] AuthState has NO error. Navigating to verifyEmail...');
+         context.goNamed(AppRoute.verifyEmail.name);
+         print('[SignupScreen] context.goNamed(AppRoute.verifyEmail.name) CALLED.');
+      } else {
+         print('[SignupScreen] AuthState HAS error. Error: ${authState.error}. Not navigating explicitly from signup screen.');
+         // Potentially show error from authState if not already handled by listener
+         if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Signup issue: ${authState.error?.toString() ?? "Unknown error"}')),
+            );
+          }
+      }
+    } else {
+      print('[SignupScreen] Form is INVALID.');
     }
   }
 
   @override
   void dispose() {
+    print('[SignupScreen] dispose() CALLED');
     _emailController.dispose();
     _passwordController.dispose();
     _displayNameController.dispose(); // Dispose display name controller
@@ -54,8 +94,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> { // Extend Consume
 
   @override
   Widget build(BuildContext context) {
+    print('[SignupScreen] build() CALLED');
+    
     // Listen to the authControllerProvider for state changes (loading, error, data)
     ref.listen<AsyncValue<dynamic>>(authControllerProvider, (_, state) {
+      print('[SignupScreen] authControllerProvider LISTENER triggered. State: ${state.toString()}');
       state.whenOrNull(
         error: (error, stackTrace) {
           if (mounted) {
@@ -70,6 +113,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> { // Extend Consume
     });
 
     final authState = ref.watch(authControllerProvider);
+    print('[SignupScreen] build() - authControllerProvider WATCHED. State: ${authState.toString()}');
 
     return Scaffold( // Using standard Scaffold
       appBar: AppBar(title: const Text('Sign Up')),

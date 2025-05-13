@@ -44,40 +44,63 @@ class FirebaseAuthRepository implements AuthRepository {
     required String password,
     String? displayName, // Add displayName
   }) async {
+    print('[FirebaseAuthRepository] signUpWithEmailAndPassword CALLED with email: $email, displayName: $displayName');
     try {
-      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+      print('[FirebaseAuthRepository] Attempting _firebaseAuth.createUserWithEmailAndPassword...');
+      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
-      if (userCredential.user != null) {
-        // Send verification email
-        if (!userCredential.user!.emailVerified) {
-          await userCredential.user!.sendEmailVerification();
-        }
-        // Create user document in Firestore
-        await _createNewUserDocumentInFirestore(userCredential.user!, displayName); 
+      print('[FirebaseAuthRepository] _firebaseAuth.createUserWithEmailAndPassword SUCCEEDED. User UID: ${userCredential.user?.uid}');
+
+      User? firebaseUser = userCredential.user;
+      if (firebaseUser != null) {
+        print('[FirebaseAuthRepository] Attempting to update display name to: $displayName');
+        await firebaseUser.updateDisplayName(displayName);
+        print('[FirebaseAuthRepository] Display name update attempted.');
+        // Reload user to get updated info including displayName
+        // await firebaseUser.reload();
+        // firebaseUser = _firebaseAuth.currentUser; 
+        // print('[FirebaseAuthRepository] User reloaded. New displayName: ${firebaseUser?.displayName}');
+
+        print('[FirebaseAuthRepository] Attempting to send email verification...');
+        await firebaseUser.sendEmailVerification();
+        print('[FirebaseAuthRepository] Email verification sent.');
+
+        print('[FirebaseAuthRepository] Attempting to create user document in Firestore...');
+        await _createNewUserDocumentInFirestore(firebaseUser, displayName);
+        print('[FirebaseAuthRepository] User document creation attempted.');
       }
       return userCredential;
-    } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase auth errors (e.g., email-already-in-use, weak-password)
-      // For now, we'll just print and rethrow, but we can make this more robust.
-      print('FirebaseAuthException during sign up: ${e.code} - ${e.message}');
-      // It's often better to throw a custom exception or return a result type
-      // that the UI layer can understand and display to the user.
-      rethrow; // Or handle more gracefully
-    } catch (e) {
-      // Handle other errors
-      print('Generic exception during sign up: $e');
-      rethrow; // Or handle more gracefully
+    } on FirebaseAuthException catch (e, stackTrace) {
+      print('[FirebaseAuthRepository] signUpWithEmailAndPassword FirebaseAuthException: ${e.code} - ${e.message}');
+      print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+      throw e;
+    } catch (e, stackTrace) {
+      print('[FirebaseAuthRepository] signUpWithEmailAndPassword Generic Exception: ${e.toString()}');
+      print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+      throw e;
     }
   }
 
   @override
   Future<void> sendEmailVerification() async {
-    final user = _firebaseAuth.currentUser;
+    print('[FirebaseAuthRepository] sendEmailVerification CALLED');
+    User? user = _firebaseAuth.currentUser;
     if (user != null && !user.emailVerified) {
-      await user.sendEmailVerification();
+      try {
+        print('[FirebaseAuthRepository] Current user: ${user.uid}. Attempting to send verification email...');
+        await user.sendEmailVerification();
+        print('[FirebaseAuthRepository] Email verification sent successfully to ${user.email}.');
+      } catch (e, stackTrace) {
+        print('[FirebaseAuthRepository] sendEmailVerification FAILED for ${user.email}. Error: $e');
+        print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+        throw e;
+      }
+    } else if (user == null) {
+      print('[FirebaseAuthRepository] sendEmailVerification: No user is currently signed in.');
+    } else {
+      print('[FirebaseAuthRepository] sendEmailVerification: Email ${user.email} is already verified.');
     }
   }
 
@@ -90,11 +113,25 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+  Stream<User?> get authStateChanges {
+    print('[FirebaseAuthRepository] authStateChanges getter CALLED');
+    return _firebaseAuth.authStateChanges().map((firebaseUser) {
+      print('[FirebaseAuthRepository] authStateChanges - Stream EMITTED Firebase User: ${firebaseUser?.uid}');
+      return firebaseUser;
+    });
+  }
 
   @override
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
+    print('[FirebaseAuthRepository] signOut CALLED');
+    try {
+      await _firebaseAuth.signOut();
+      print('[FirebaseAuthRepository] _firebaseAuth.signOut() SUCCEEDED.');
+    } catch (e, stackTrace) {
+      print('[FirebaseAuthRepository] signOut FAILED. Error: $e');
+      print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+      throw e;
+    }
   }
 
   @override
@@ -105,46 +142,55 @@ class FirebaseAuthRepository implements AuthRepository {
     print('[FirebaseAuthRepository] signInWithEmailAndPassword CALLED with email: $email');
     try {
       print('[FirebaseAuthRepository] Attempting _firebaseAuth.signInWithEmailAndPassword...');
-      final UserCredential userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       print('[FirebaseAuthRepository] _firebaseAuth.signInWithEmailAndPassword SUCCEEDED. User UID: ${userCredential.user?.uid}');
       return userCredential.user;
-    } on FirebaseAuthException catch (e) {
-      print('[FirebaseAuthRepository] FirebaseAuthException CAUGHT: ${e.code} - ${e.message}');
-      // Consider specific error handling here (e.g., user-not-found, wrong-password)
-      // For now, rethrow or handle generically
-      print('Firebase Auth Exception during sign in: ${e.code} - ${e.message}');
-      throw e; // Rethrow to be handled by the controller or UI
+    } on FirebaseAuthException catch (e, stackTrace) {
+      print('[FirebaseAuthRepository] signInWithEmailAndPassword FirebaseAuthException: ${e.code} - ${e.message}');
+      print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+      // Consider re-throwing a domain-specific exception or handling appropriately
+      throw e; // Re-throw for now, AuthController will catch it
     } catch (e, stackTrace) {
-      print('[FirebaseAuthRepository] Generic EXCEPTION CAUGHT: ${e.toString()}');
-      print('[FirebaseAuthRepository] StackTrace: ${stackTrace.toString()}');
-      throw e; // Rethrow to ensure it's handled upstream
+      print('[FirebaseAuthRepository] signInWithEmailAndPassword Generic Exception: ${e.toString()}');
+      print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+      throw e; // Re-throw
     }
   }
 
   @override
   Future<void> sendPasswordResetEmail(String email) async {
+    print('[FirebaseAuthRepository] sendPasswordResetEmail CALLED for email: $email');
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      // Handle errors, e.g., user not found
-      print('Firebase Auth Exception during password reset: ${e.code} - ${e.message}');
-      throw e; // Rethrow to be handled by the controller or UI
+      print('[FirebaseAuthRepository] Password reset email sent successfully to $email.');
+    } catch (e, stackTrace) {
+      print('[FirebaseAuthRepository] sendPasswordResetEmail FAILED for $email. Error: $e');
+      print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+      throw e;
     }
   }
 
   @override
   Future<User?> reloadCurrentUser() async {
-    try {
-      await _firebaseAuth.currentUser?.reload();
-      return _firebaseAuth.currentUser;
-    } catch (e) {
-      print('Error reloading user: $e');
-      // Optionally rethrow or handle more gracefully
-      // Consider returning null or rethrowing if reload is critical and fails
-      return _firebaseAuth.currentUser; // Or null if preferred on failure
+    print('[FirebaseAuthRepository] reloadCurrentUser CALLED');
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      try {
+        print('[FirebaseAuthRepository] Attempting to reload user: ${user.uid}');
+        await user.reload();
+        final reloadedUser = _firebaseAuth.currentUser; // Get the fresh user instance
+        print('[FirebaseAuthRepository] User reloaded successfully: ${reloadedUser?.uid}, Verified: ${reloadedUser?.emailVerified}');
+        return reloadedUser;
+      } catch (e, stackTrace) {
+        print('[FirebaseAuthRepository] reloadCurrentUser FAILED for ${user.uid}. Error: $e');
+        print('[FirebaseAuthRepository] StackTrace: $stackTrace');
+        throw e;
+      }
     }
+    print('[FirebaseAuthRepository] reloadCurrentUser: No user to reload.');
+    return null;
   }
 } 

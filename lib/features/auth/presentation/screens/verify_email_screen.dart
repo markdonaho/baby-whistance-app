@@ -15,14 +15,22 @@ class VerifyEmailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print('[VerifyEmailScreen] build() CALLED');
+    
     // Listen to the auth controller for potential errors to show in a SnackBar
     ref.listen<AsyncValue<User?>>(authControllerProvider, (_, state) {
+      print('[VerifyEmailScreen] authControllerProvider LISTENER triggered. State: ${state.toString()}');
       if (state is AsyncError && state.error != null) {
+        print('[VerifyEmailScreen] Listener caught error: ${state.error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${state.error.toString()}')),
         );
       }
     });
+    print('[VerifyEmailScreen] build() - authControllerProvider listener SET UP');
+
+    final authUser = ref.watch(authControllerProvider.select((s) => s.value));
+    print('[VerifyEmailScreen] build() - authControllerProvider.select((s) => s.value) WATCHED. User: ${authUser?.uid}, Verified: ${authUser?.emailVerified}');
 
     return AppScaffold(
       title: 'Verify Your Email',
@@ -41,7 +49,9 @@ class VerifyEmailScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () async {
+                  print('[VerifyEmailScreen] Resend Verification Email button PRESSED');
                   await ref.read(authControllerProvider.notifier).sendEmailVerification();
+                  print('[VerifyEmailScreen] sendEmailVerification call COMPLETED');
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Verification email resent!')),
@@ -53,7 +63,9 @@ class VerifyEmailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
+                  print('[VerifyEmailScreen] Refresh Status button PRESSED');
                   final isVerified = await ref.read(authControllerProvider.notifier).checkIsEmailVerified();
+                  print('[VerifyEmailScreen] checkIsEmailVerified call COMPLETED. Result: $isVerified');
                   if (context.mounted) {
                     if (isVerified) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -75,7 +87,9 @@ class VerifyEmailScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
+                  print('[VerifyEmailScreen] Back to Login / Sign Out button PRESSED');
                   ref.read(authControllerProvider.notifier).signOut();
+                  print('[VerifyEmailScreen] signOut call COMPLETED');
                   // Router will redirect to /login after sign out
                 },
                 child: const Text('Back to Login / Sign Out'),

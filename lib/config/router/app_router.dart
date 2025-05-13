@@ -25,10 +25,13 @@ enum AppRoute {
 
 // Provider for the GoRouter instance
 final appRouterProvider = Provider<GoRouter>((ref) {
+  print('[AppRouter] appRouterProvider CALLED (building GoRouter)');
   final authState = ref.watch(authControllerProvider);
+  print('[AppRouter] appRouterProvider - authControllerProvider WATCHED initially, state: ${authState.toString()}');
 
   return GoRouter(
     initialLocation: '/login',
+    debugLogDiagnostics: true, // This provides verbose GoRouter logging
     routes: [
       GoRoute(
         path: '/login',
@@ -67,7 +70,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) {
-      print('[GoRouter] REDIRECT CALLED. Current location: ${state.matchedLocation}, Name: ${state.name}');
+      print('-----------------------------------------------------------------------');
+      print('[AppRouter] >>> GoRouter REDIRECT Function CALLED <<<');
+      print('[AppRouter] Current GoRouterState: location: ${state.location}, matchedLocation: ${state.matchedLocation}, name: ${state.name}, path: ${state.path}, fullPath: ${state.fullPath}, extra: ${state.extra}');
 
       final authControllerState = ref.read(authControllerProvider);
       print('[GoRouter] AuthController state: ${authControllerState.toString()}');
@@ -166,7 +171,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return '/home';
       }
 
-      print('[GoRouter] User loggedIn AND verified. No specific redirect condition met. Returning null (allow navigation).');
+      print('[AppRouter] User loggedIn AND verified. No specific redirect condition met. Returning null (allow navigation).');
+      print('-----------------------------------------------------------------------');
       return null;
     },
   );

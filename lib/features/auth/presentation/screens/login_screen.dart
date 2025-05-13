@@ -9,7 +9,10 @@ class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() {
+    print('[LoginScreen] createState() CALLED');
+    return _LoginScreenState();
+  }
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
@@ -19,7 +22,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    print('[LoginScreen] initState() CALLED');
+  }
+
+  @override
   void dispose() {
+    print('[LoginScreen] dispose() CALLED');
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -90,6 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showForgotPasswordDialog(BuildContext context, WidgetRef ref) {
+    print('[LoginScreen] _showForgotPasswordDialog CALLED');
     final emailController = TextEditingController();
     showDialog(
       context: context,
@@ -152,7 +163,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('[LoginScreen] build() CALLED');
     ref.listen<AsyncValue<dynamic>>(authControllerProvider, (_, state) {
+      print('[LoginScreen] authControllerProvider LISTENER triggered. State: ${state.toString()}');
       state.whenOrNull(
         error: (error, stackTrace) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -162,6 +175,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // loading: () { // Handled by _isLoading locally for the button }
       );
     });
+    print('[LoginScreen] build() - authControllerProvider listener SET UP');
+
+    final authStateIsLoading = ref.watch(authControllerProvider.select((s) => s.isLoading));
+    print('[LoginScreen] build() - authControllerProvider.select((s) => s.isLoading) WATCHED. Value: $authStateIsLoading');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
