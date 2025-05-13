@@ -14,11 +14,11 @@ A Flutter application for family and friends to guess the details of the new bab
 
 ### Authentication (Firebase) ⬜
 - [✅] Email/Password Sign-up
-- [ ] Email Verification
+- [✅] Email Verification
 - [ ] Login
-- [ ] Logout
-- [ ] Global Auth State Management (e.g., Provider, Riverpod, BLoC)
-- [ ] Protected Routes (redirect unauthenticated users)
+- [✅] Logout
+- [✅] Global Auth State Management (e.g., Provider, Riverpod, BLoC) - Implemented with Riverpod
+- [✅] Protected Routes (redirect unauthenticated users) - Implemented with GoRouter and Riverpod
 - [ ] User Profile Creation in Firestore (store UID, email, role, display name)
 - [ ] Role-Based Access Control (RBAC)
     - [ ] Define Roles: `user`, `admin`, `Whistance`
@@ -126,7 +126,11 @@ lib/
 │
 └── features/                 # Contains all feature-specific modules
     ├── auth/                 # Authentication feature (login, signup, etc.)
-    │   ├── application/      # Business logic (e.g., Cubits/Blocs, services) - To be added
+    │   ├── application/      # Business logic (Riverpod Providers, Controllers)
+    │   │   ├── auth_controller.dart
+    │   │   ├── auth_controller.g.dart
+    │   │   ├── auth_providers.dart
+    │   │   └── auth_providers.g.dart
     │   ├── domain/           # Core business models and interfaces
     │   │   └── repositories/ # Abstract contracts for data operations (e.g., AuthRepository)
     │   ├── infrastructure/   # Data sources, repository implementations
@@ -169,7 +173,7 @@ lib/
     *   `services/`: For application-level services that might be consumed by various features (e.g., a global notification service).
     *   `widgets/`: For common UI components (e.g., custom buttons, dialogs, list items) that are used in multiple feature modules. **Note:** Actively look for opportunities to extract reusable components from individual feature pages into this directory to maintain consistency and reduce code duplication.
 *   **`features/`**: Each subdirectory within `features/` represents a distinct functional module of the application (e.g., `auth`, `home`).
-    *   **`application/`** (Conceptual - To be added as needed): Contains the business logic for the feature, such as state management (Blocs, Cubits, Providers), use cases, or application services.
+    *   **`application/`**: Contains the business logic for the feature, such as state management (Riverpod Providers like `authControllerProvider` and `authRepositoryProvider`, Notifiers like `AuthController`), use cases, or application services.
     *   **`domain/`** (Conceptual - To be added as needed): Includes the core business logic, entities, and interfaces (abstract repositories) for the feature, independent of any framework or infrastructure.
         *   `repositories/`: Abstract contracts defining data operations (e.g., `AuthRepository`).
     *   **`infrastructure/`** (Conceptual - To be added as needed): Implements the interfaces defined in the `domain` layer, handling external concerns like data fetching (repositories), device services, etc.
