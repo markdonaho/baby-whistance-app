@@ -1,1 +1,17 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"baby-whistance-app","configurations":{"web":"1:997292640503:web:4098fa61d4acafd6a36bf2"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "baby-whistance-app",
+          "configurations": {
+            "web": "1:997292640503:web:4098fa61d4acafd6a36bf2"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

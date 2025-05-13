@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart'; // Import GoRouter for navigation
+import 'package:firebase_auth/firebase_auth.dart'; // Import for User type
+import 'package:baby_whistance_app/config/router/app_router.dart'; // Import for appRouterProvider
 import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 import 'package:baby_whistance_app/features/auth/application/auth_controller.dart'; // Import AuthController
 // TODO: Import AuthRepository for type safety when using its methods
@@ -55,9 +57,12 @@ class VerifyEmailScreen extends ConsumerWidget {
                   if (context.mounted) {
                     if (isVerified) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Email is verified! Redirecting...')),
+                        const SnackBar(content: Text('Email is verified! Attempting to redirect...')),
                       );
-                      // Router will handle redirection based on auth state update
+                      // Explicitly navigate to home if verified
+                      if (context.mounted) { // Double-check mounted before async gap
+                        context.goNamed(AppRoute.home.name);
+                      }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Email not verified yet. Please check again.')),

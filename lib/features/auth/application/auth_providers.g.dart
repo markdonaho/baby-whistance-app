@@ -22,7 +22,26 @@ final firebaseAuthProvider = AutoDisposeProvider<FirebaseAuth>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FirebaseAuthRef = AutoDisposeProviderRef<FirebaseAuth>;
-String _$authRepositoryHash() => r'8f02de22a199f1b4a6ee6ded68007bdc1d032069';
+String _$firebaseFirestoreHash() => r'230b9276da2e44bb1aa6b300e1ddbb2f93c422da';
+
+/// See also [firebaseFirestore].
+@ProviderFor(firebaseFirestore)
+final firebaseFirestoreProvider =
+    AutoDisposeProvider<FirebaseFirestore>.internal(
+      firebaseFirestore,
+      name: r'firebaseFirestoreProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$firebaseFirestoreHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FirebaseFirestoreRef = AutoDisposeProviderRef<FirebaseFirestore>;
+String _$authRepositoryHash() => r'fd91fb6ab776158715c8ec4586aa74037811e870';
 
 /// See also [authRepository].
 @ProviderFor(authRepository)
@@ -58,5 +77,21 @@ final authStateChangesProvider = AutoDisposeStreamProvider<User?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthStateChangesRef = AutoDisposeStreamProviderRef<User?>;
+String _$appUserHash() => r'0290ee70007ab265e820e7728b75c1272df8a1ba';
+
+/// See also [appUser].
+@ProviderFor(appUser)
+final appUserProvider = AutoDisposeStreamProvider<AppUser?>.internal(
+  appUser,
+  name: r'appUserProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$appUserHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AppUserRef = AutoDisposeStreamProviderRef<AppUser?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

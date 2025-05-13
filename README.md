@@ -12,22 +12,24 @@ A Flutter application for family and friends to guess the details of the new bab
 - [✅] Basic App Navigation (e.g., using GoRouter or Navigator 2.0) - Decided on GoRouter
 - [✅] Layout Component / Theme Setup
 
-### Authentication (Firebase) ⬜
+### Authentication (Firebase) 🟨
 - [✅] Email/Password Sign-up
 - [✅] Email Verification
-- [ ] Login
+  - [✅] Send verification email on signup
+  - [✅] Screen/flow to inform user to check email and verify
+  - [✅] Protect routes/features based on email verification status
+- [✅] Login (Email/Password)
 - [✅] Logout
 - [✅] Global Auth State Management (e.g., Provider, Riverpod, BLoC) - Implemented with Riverpod
 - [✅] Protected Routes (redirect unauthenticated users) - Implemented with GoRouter and Riverpod
-- [ ] User Profile Creation in Firestore (store UID, email, role, display name)
-- [ ] Role-Based Access Control (RBAC)
-    - [ ] Define Roles: `user`, `admin`, `Whistance`
-    - [ ] Assign Roles (manual for now, or part of an invite system later)
-    - [ ] Firestore Security Rules for Role-Based Data Access
-    - [ ] Conditional UI elements based on role
-
-### Security
-- [ ] Make sure everything is secure and safe
+- [✅] User Profile Creation in Firestore (store UID, email, role, display name)
+- [✅] Role-Based Access Control (RBAC)
+    - [✅] Define Roles: `user`, `admin`, `Whistance`
+    - [✅] Assign Roles (manual for now, or part of an invite system later)
+    - [✅] Firestore Security Rules for Role-Based Data Access
+    - [✅] Conditional UI elements based on role (via appUserProvider)
+- [✅] Password Reset
+- [ ] Testing for Auth Logic
 
 ### User Features (Home Page / Main User Flow) ⬜
 - [ ] **Guess Submission**
@@ -74,6 +76,11 @@ A Flutter application for family and friends to guess the details of the new bab
 - [ ] Loading States and Feedback
 - [ ] Error Handling and User Notifications
 
+
+### Security
+- [ ] Make sure everything is secure and safe
+- [ ] Never actually complete as long as the app is deployed
+
 ### Backend (Firebase) ⬜
 - [ ] **Firestore Data Models:**
     - [ ] `users` (uid, email, displayName, role, createdAt)
@@ -100,6 +107,17 @@ A Flutter application for family and friends to guess the details of the new bab
 - [ ] PWA Capabilities
 - [ ] Admin dashboard enhancements
 
+## Known Issues / Next Steps
+- **P1: Investigate `LoginScreen` unmounting during login process:**
+  - **Symptom:** After a successful authentication call, `LoginScreen._login()` finds `!mounted` is true before it can execute its explicit navigation (`context.goNamed`).
+  - **Current State:** Login flow *is functional* because `GoRouter` correctly redirects to `/home` after `AuthController` updates its state.
+  - **Concern:** The `LoginScreen` becoming unmounted prematurely is a code smell and could indicate instability or lead to other subtle bugs (e.g., if `_isLoading` isn't reset correctly in all paths, though the current `finally` block handles this).
+  - **Possible Causes to Investigate:**
+    - Unintentional/automatic hot restarts (IDE settings, other tools).
+    - Parent widget rebuilding and replacing `LoginScreen` due to auth state changes.
+    - Aggressive/premature navigation or widget replacement by GoRouter itself during the auth flow.
+    - Deeper Flutter framework issue or subtle bug related to `async/await` and widget lifecycle.
+
 ## Project Structure
 
 The project follows a feature-first directory structure to promote modularity and scalability.
@@ -118,6 +136,7 @@ lib/
 │
 ├── shared/                   # Shared widgets, models, or services across features
 │   ├── models/               # Shared data models
+│   │   ├── app_user.dart     # User model for Firestore data
 │   │   └── .gitkeep
 │   ├── services/             # Shared application services
 │   │   └── .gitkeep
@@ -169,7 +188,7 @@ lib/
     *   `router/app_router.dart`: Manages all navigation logic using `GoRouter`, defining routes and their corresponding screens.
 *   **`core/`**: Houses fundamental utilities, global constants, base classes, error handling mechanisms, and potentially dependency injection setup. This code is foundational and used across the entire application.
 *   **`shared/`**: Contains elements that are reusable across multiple features but are not as foundational as those in `core/`.
-    *   `models/`: For data models that don't strictly belong to a single feature and are used by several.
+    *   `models/`: For data models that don't strictly belong to a single feature and are used by several (e.g., `AppUser`).
     *   `services/`: For application-level services that might be consumed by various features (e.g., a global notification service).
     *   `widgets/`: For common UI components (e.g., custom buttons, dialogs, list items) that are used in multiple feature modules. **Note:** Actively look for opportunities to extract reusable components from individual feature pages into this directory to maintain consistency and reduce code duplication.
 *   **`features/`**: Each subdirectory within `features/` represents a distinct functional module of the application (e.g., `auth`, `home`).
