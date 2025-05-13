@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart'; // Assuming AppScaffold is appropriate
-// TODO: Import AuthRepository and a way to access it (e.g., Provider/Riverpod)
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart'; // Import GoRouter for navigation
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
+import 'package:baby_whistance_app/features/auth/application/auth_controller.dart'; // Import AuthController
+// TODO: Import AuthRepository for type safety when using its methods
 // import 'package:baby_whistance_app/features/auth/domain/repositories/auth_repository.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart'; // Or your chosen state management
+// TODO: Import the actual auth_providers.dart file
+// import 'package:baby_whistance_app/features/auth/application/auth_providers.dart';
 
-class VerifyEmailScreen extends StatelessWidget { // Or ConsumerWidget if using Riverpod
+class VerifyEmailScreen extends ConsumerWidget {
   const VerifyEmailScreen({super.key});
 
-  // TODO: Access AuthRepository instance here (e.g., via ref.watch for Riverpod)
-
   @override
-  Widget build(BuildContext context) { // Or WidgetRef ref for Riverpod
-    // final authRepository = ref.watch(authRepositoryProvider); // Example for Riverpod
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Listen to the auth controller for potential errors to show in a SnackBar
+    ref.listen<AsyncValue<User?>>(authControllerProvider, (_, state) {
+      if (state is AsyncError && state.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${state.error.toString()}')),
+        );
+      }
+    });
 
-    return AppScaffold( // Using AppScaffold for consistency
+    return AppScaffold(
       title: 'Verify Your Email',
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -30,40 +39,41 @@ class VerifyEmailScreen extends StatelessWidget { // Or ConsumerWidget if using 
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () async {
-                  // TODO: Implement resend verification email
-                  // await authRepository.sendEmailVerification();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Verification email resent!')),
-                  );
+                  await ref.read(authControllerProvider.notifier).sendEmailVerification();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Verification email resent!')),
+                    );
+                  }
                 },
                 child: const Text('Resend Verification Email'),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
-                  // TODO: Implement check verification status and navigate
-                  // final isVerified = await authRepository.isEmailVerified();
-                  // if (isVerified) {
-                  //   // TODO: Navigate to home or appropriate screen
-                  //   // context.go('/home'); // Example with GoRouter
-                  // } else {
-                  //   ScaffoldMessenger.of(context).showSnackBar(
-                  //     const SnackBar(content: Text('Email not verified yet. Please check your email or try again.')),
-                  //   );
-                  // }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Check status functionality to be implemented.')),
-                  );
+                  final isVerified = await ref.read(authControllerProvider.notifier).checkIsEmailVerified();
+                  if (context.mounted) {
+                    if (isVerified) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Email is verified! Redirecting...')),
+                      );
+                      // Router will handle redirection based on auth state update
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Email not verified yet. Please check again.')),
+                      );
+                    }
+                  }
                 },
-                child: const Text('I've Verified / Refresh Status'),
+                child: const Text('Refresh Status'), // Kept simplified text
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  // TODO: Optionally, navigate to login or allow user to go back
-                  // context.go('/login'); // Example
+                  ref.read(authControllerProvider.notifier).signOut();
+                  // Router will redirect to /login after sign out
                 },
-                child: const Text('Back to Login (Optional)'),
+                child: const Text('Back to Login / Sign Out'),
               )
             ],
           ),

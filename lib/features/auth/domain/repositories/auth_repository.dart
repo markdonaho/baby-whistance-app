@@ -10,5 +10,7 @@ abstract class AuthRepository {
   Future<bool> isEmailVerified();
   Stream<User?> get authStateChanges;
 
+  Future<void> signOut();
+
   // We'll add other methods like signIn, signOut, getCurrentUser later
 } 
