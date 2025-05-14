@@ -1,12 +1,14 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// ignore_for_file: type=lint
+
 part of 'auth_controller.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authControllerHash() => r'30f935cf1d4dc13adfca725caf84af1b7840374d';
+String _$authControllerHash() => r'570d13a8769bd28128d3938b345bc31023dd6e23';
 
 /// See also [AuthController].
 @ProviderFor(AuthController)

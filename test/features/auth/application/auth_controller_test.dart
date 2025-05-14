@@ -109,7 +109,7 @@ void main() {
     test('state becomes AsyncData(User) when authStateChangesProvider emits a User', () async {
       // Arrange
       when(mockFirebaseUser.emailVerified).thenReturn(true);
-      final userStream = Stream.value(mockFirebaseUser);
+      final userStream = Stream<firebase_auth.User?>.value(mockFirebaseUser);
       reinitializeContainerAndController(authStateStream: userStream);
       
       // Act: Wait for the provider to process the stream emission.
@@ -153,7 +153,7 @@ void main() {
 
     test('sets state to AsyncError on signup failure (repository throws)', () async {
       // Arrange
-      final exception = FirebaseAuthException(code: 'weak-password');
+      final exception = firebase_auth.FirebaseAuthException(code: 'weak-password');
       when(mockAuthRepository.signUpWithEmailAndPassword(
         email: tEmail,
         password: tPassword,
@@ -228,7 +228,7 @@ void main() {
 
     test('sets state to AsyncError and returns null on signin failure (repo throws)', () async {
       // Arrange
-      final exception = FirebaseAuthException(code: 'user-not-found');
+      final exception = firebase_auth.FirebaseAuthException(code: 'user-not-found');
       when(mockAuthRepository.signInWithEmailAndPassword(email: tEmail, password: tPassword))
           .thenThrow(exception);
 

@@ -1,12 +1,14 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// ignore_for_file: type=lint
+
 part of 'auth_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$firebaseAuthHash() => r'7791bf70ce0f01bf991a53a76abc915478673c0b';
+String _$firebaseAuthHash() => r'bff47d431f9d7f782280cf7150cfe2ce538c5c42';
 
 /// See also [firebaseAuth].
 @ProviderFor(firebaseAuth)
@@ -22,7 +24,7 @@ final firebaseAuthProvider = AutoDisposeProvider<FirebaseAuth>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FirebaseAuthRef = AutoDisposeProviderRef<FirebaseAuth>;
-String _$firebaseFirestoreHash() => r'230b9276da2e44bb1aa6b300e1ddbb2f93c422da';
+String _$firebaseFirestoreHash() => r'3a7cee907a0560edac10ec737085f75cec4c5ea9';
 
 /// See also [firebaseFirestore].
 @ProviderFor(firebaseFirestore)
@@ -41,7 +43,25 @@ final firebaseFirestoreProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FirebaseFirestoreRef = AutoDisposeProviderRef<FirebaseFirestore>;
-String _$authRepositoryHash() => r'fd91fb6ab776158715c8ec4586aa74037811e870';
+String _$firebaseStorageHash() => r'eb2a0d8d8a87e9a6922b55abbdba5d9fbeb550d4';
+
+/// See also [firebaseStorage].
+@ProviderFor(firebaseStorage)
+final firebaseStorageProvider = AutoDisposeProvider<FirebaseStorage>.internal(
+  firebaseStorage,
+  name: r'firebaseStorageProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$firebaseStorageHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef FirebaseStorageRef = AutoDisposeProviderRef<FirebaseStorage>;
+String _$authRepositoryHash() => r'c1abea88b3dcc9424fb33995da6f615f1db2c9b6';
 
 /// See also [authRepository].
 @ProviderFor(authRepository)
@@ -59,7 +79,7 @@ final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
-String _$authStateChangesHash() => r'2b7cdea91185426216b913040c54b42cca155f4c';
+String _$authStateChangesHash() => r'2229d847ac37950ad57182b63e1df43f9959f30c';
 
 /// See also [authStateChanges].
 @ProviderFor(authStateChanges)

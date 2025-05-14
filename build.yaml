@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      riverpod_generator:
+        # For more information about build options, see https://pub.dev/packages/riverpod_generator#buildoptions
+        enabled: true
+        generate_for:
+          - lib/** # Only run riverpod_generator on files in the lib folder
+      source_gen|combining_builder: # This is typically used by mockito's annotation processor
+        options:
+          ignore_for_file:
+            - type=lint
+        generate_for:
+          - lib/**.dart
+          - test/**.dart # Ensure mockito runs on test files 
