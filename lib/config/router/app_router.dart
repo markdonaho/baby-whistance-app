@@ -13,6 +13,8 @@ import 'package:baby_whistance_app/screens/admin_screen.dart';
 import 'package:baby_whistance_app/screens/profile_screen.dart';
 import 'package:baby_whistance_app/screens/all_guesses_screen.dart';
 import 'package:baby_whistance_app/screens/dev_area_screen.dart';
+import 'package:baby_whistance_app/screens/admin_user_management_screen.dart';
+import 'package:baby_whistance_app/screens/admin_enter_baby_details_screen.dart';
 
 // Enum for route names to ensure type safety and centralize route management
 enum AppRoute {
@@ -22,6 +24,8 @@ enum AppRoute {
   guessForm,
   uploadPhoto,
   admin,
+  adminUserManagement,
+  adminEnterBabyDetails,
   profile,
   allGuesses,
   devArea,
@@ -66,6 +70,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AdminScreen(),
       ),
       GoRoute(
+        path: '/admin/user-management',
+        name: AppRoute.adminUserManagement.name,
+        builder: (context, state) => const AdminUserManagementScreen(),
+      ),
+      GoRoute(
+        path: '/admin/enter-baby-details',
+        name: AppRoute.adminEnterBabyDetails.name,
+        builder: (context, state) => const AdminEnterBabyDetailsScreen(),
+      ),
+      GoRoute(
         path: '/profile',
         name: AppRoute.profile.name,
         builder: (context, state) => const ProfileScreen(),
@@ -102,7 +116,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final goingToVerifyEmail = currentLocationPath == '/verify-email';
 
       final publicPaths = ['/login', '/signup'];
-      final emailVerifiedPaths = ['/guess-form', '/profile', '/upload-photo', '/admin', '/all-guesses', '/dev-area'];
+      final emailVerifiedPaths = [
+        '/guess-form', '/profile', '/upload-photo', '/admin', '/admin/user-management', 
+        '/admin/enter-baby-details', '/all-guesses', '/dev-area'
+      ];
 
       final isPublicRoute = publicPaths.contains(currentLocationPath);
       final isEmailVerifiedRoute = emailVerifiedPaths.contains(currentLocationPath);

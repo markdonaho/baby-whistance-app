@@ -2,9 +2,13 @@
 
 ## Next Development Focus (as of 2025-05-15)
 
-- [ ] **Add AM/PM to diplay of time in my guess and all guesses**
-- [ ] 
-
+- [ ] **Implement Photo Journey Feature for "Whistance" Role**
+    - [ ] Design UI for image selection and caption input
+    - [ ] Implement image upload to Firebase Storage
+    - [ ] Create `photos` collection in Firestore to store image metadata (uploaderId, imageUrl, caption, uploadedAt, sortOrder)
+- [ ] **Implement Photo Journey Display**
+    - [ ] Design and implement UI to display uploaded photos (e.g., gallery, timeline)
+- [ ] **Investigate `LoginScreen` unmounting issue (P1)**
 
 
 A Flutter application for family and friends to guess the details of the new baby and share in the journey.
@@ -49,11 +53,12 @@ A Flutter application for family and friends to guess the details of the new bab
         - [✅] Navigates back to `AllGuessesScreen` after successful edit.
     - [✅] Save/Update Guesses to Firestore (top-level `guesses` collection).
     - [✅] Display User's Current Guess on `GuessSubmissionEditScreen`.
+    - [✅] Add AM/PM to diplay of time in my guess and all guesses
 - [⬜️] **Display All Guesses (`AllGuessesScreen`)**
     - [✅] Data providers created to fetch all guesses (`allGuessesStreamProvider`).
     - [✅] Basic `AllGuessesScreen` widget created.
 - [ ] **View Baby Details (Post-Reveal)**
-    - [ ] Display actual baby details once entered by an Admin/Whistance.
+    - [✅] Display actual baby details once entered by an Admin/Whistance.
 
 ### "Whistance" Role Features (Mom & Dad) ⬜
 - [ ] **Photo Journey Upload**
@@ -66,17 +71,17 @@ A Flutter application for family and friends to guess the details of the new bab
 - [ ] **(Potentially) Enter Actual Baby Details**
     - [ ] Form to input the actual birth details once the baby arrives.
 
-### Admin Features ⬜
-- [ ] **User Management (Basic)**
-    - [ ] View list of users
-    - [ ] Manually assign/change user roles (if not using an invite system with pre-assigned roles)
-- [ ] **Guessing Management**
-    - [ ] Set `guessing_status` (e.g., "open", "closed", "revealed")
-        - [ ] When "closed", users can no longer submit/edit guesses.
-        - [ ] When "revealed", actual details are shown, and perhaps all guesses.
-    - [ ] Input Actual Baby Details (if not handled by "Whistance" role)
+### Admin Features ✅
+- [✅] **User Management (Basic)**
+    - [✅] View list of users
+    - [✅] Manually assign/change user roles (if not using an invite system with pre-assigned roles)
+- [✅] **Guessing Management**
+    - [✅] Set `guessing_status` (e.g., "open", "closed", "revealed")
+        - [✅] When "closed", users can no longer submit/edit guesses.
+        - [✅] When "revealed", actual details are shown, and perhaps all guesses.
+    - [✅] Input Actual Baby Details (if not handled by "Whistance" role)
     - [ ] (Optional) Trigger calculation of "winners" or closest guesses.
-    - [ ] Conditionally disable editing based on `guessing_status` (admin feature).
+    - [✅] Conditionally disable editing based on `guessing_status` (admin feature).
 - [ ] **Content Management (Photos)**
     - [ ] Ability to moderate/delete uploaded photos if necessary.
 
@@ -98,17 +103,17 @@ A Flutter application for family and friends to guess the details of the new bab
     - [✅] `users` (uid, email, displayName, role, createdAt)
     - [✅] `guesses` (userId, submittedAt, lastEditedAt (consider adding), dateGuess, timeGuess, weightGuess, lengthGuess, hairColorGuess, eyeColorGuess, looksLikeGuess, brycenReactionGuess, id) - Stored in top-level collection.
     - [ ] `photos` (uploaderId, imageUrl, caption, uploadedAt, sortOrder)
-    - [ ] `app_status` (or similar, for `guessing_status`, `actual_baby_details`)
+    - [✅] `app_status` (or similar, for `guessing_status`, `actual_baby_details`)
 - [✅] **Firebase Storage:**
     - [ ] Rules for photo uploads (only authenticated users, size limits, etc.)
 - [✅] **Firebase Authentication:**
     - [✅] Standard email/password setup.
     - [✅] Email verification enforcement.
-- [✅] **Firestore Security Rules:** (Updated for `guesses` collection)
+- [✅] **Firestore Security Rules:** (Updated for `guesses` collection, `users`, and `app_status`)
     - [✅] Users can only create/update/delete their own guesses.
     - [✅] All authenticated users can read all guesses.
     - [ ] "Whistance" role can upload photos.
-    - [ ] "Admin" role can manage users and `app_status`.
+    - [✅] "Admin" role can manage users and `app_status`.
     - [ ] All authenticated users can read photos.
 
 ### Future Features / Ideas ⬜

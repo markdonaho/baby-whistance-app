@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:baby_whistance_app/config/router/app_router.dart';
 import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
+import 'package:baby_whistance_app/features/app_status/app_status_service.dart';
 
 // Define the fixed birth date
 final DateTime fixedBirthDate = DateTime(2025, 11, 21);
@@ -36,6 +37,8 @@ class GuessSubmissionEditScreen extends ConsumerWidget { // Renamed class
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final appStatusAsync = ref.watch(currentAppStatusProvider);
+
     // Listen to the guess submission state for global feedback if needed
     ref.listen<AsyncValue<void>>(
       guessControllerProvider, 
@@ -85,84 +88,131 @@ class GuessSubmissionEditScreen extends ConsumerWidget { // Renamed class
       );
     }
 
-    final Widget screenBody = Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              'Welcome! Baby boy is due ${DateFormat('MMMM d, yyyy').format(fixedBirthDate)}!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const Text(
-              'Make your predictions below:',
-              style: TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            const GuessSubmissionForm(), // This remains the same internal widget
-            const SizedBox(height: 40),
-            const Text('Your Most Recent Guess:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
-            const SizedBox(height: 10),
-            Consumer(
-              builder: (context, ref, child) {
-                final guessesAsyncValue = ref.watch(userGuessesStreamProvider);
-                return guessesAsyncValue.when(
-                  data: (guesses) {
-                    if (guesses.isEmpty) {
-                      return const Text('No guess submitted yet.', textAlign: TextAlign.center,);
-                    }
-                    final mostRecentGuess = guesses.first;
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Target Date: ${DateFormat('MMMM d, yyyy').format(mostRecentGuess.dateGuess.toDate())},', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            Text('Time: ${mostRecentGuess.timeGuess}', style: const TextStyle(fontSize: 15)),
-                            Text('Weight: ${formatWeight(mostRecentGuess.weightGuess)}', style: const TextStyle(fontSize: 15)),
-                            Text('Length: ${mostRecentGuess.lengthGuess} inches', style: const TextStyle(fontSize: 15)),
-                            Text('Hair Color: ${mostRecentGuess.hairColorGuess}', style: const TextStyle(fontSize: 15)),
-                            Text('Eye Color: ${mostRecentGuess.eyeColorGuess}', style: const TextStyle(fontSize: 15)),
-                            Text('Looks Like: ${mostRecentGuess.looksLikeGuess}', style: const TextStyle(fontSize: 15)),
-                            if (mostRecentGuess.brycenReactionGuess != null && mostRecentGuess.brycenReactionGuess!.isNotEmpty)
-                              Text('Brycen\'s Reaction: ${mostRecentGuess.brycenReactionGuess}', style: const TextStyle(fontSize: 15)),
-                            const SizedBox(height: 8),
-                            Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            if (mostRecentGuess.lastEditedAt != null)
-                              Text('Last Edited: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.lastEditedAt!.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
-                        ),
+    return appStatusAsync.when(
+      data: (appStatus) {
+        final bool guessingAllowed = appStatus.guessingStatus == GuessingStatus.open;
+        String noticeMessage = '';
+        if (appStatus.guessingStatus == GuessingStatus.closed) {
+          noticeMessage = 'Guessing is currently closed.';
+        } else if (appStatus.guessingStatus == GuessingStatus.revealed) {
+          noticeMessage = 'The baby details have been revealed! Guessing is closed.';
+        }
+
+        final Widget screenBody = Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(
+                  'Welcome! Baby boy is due ${DateFormat('MMMM d, yyyy').format(fixedBirthDate)}!',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const Text(
+                  'Make your predictions below:',
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                if (!guessingAllowed) ...[
+                  const SizedBox(height: 20),
+                  Card(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        noticeMessage,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold),
                       ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                GuessSubmissionForm(guessingAllowed: guessingAllowed), // Pass guessingAllowed
+                const SizedBox(height: 40),
+                const Text('Your Most Recent Guess:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+                const SizedBox(height: 10),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final guessesAsyncValue = ref.watch(userGuessesStreamProvider);
+                    return guessesAsyncValue.when(
+                      data: (guesses) {
+                        if (guesses.isEmpty) {
+                          return const Text('No guess submitted yet.', textAlign: TextAlign.center,);
+                        }
+                        final mostRecentGuess = guesses.first;
+                        String formattedTimeGuess = mostRecentGuess.timeGuess;
+                        try {
+                          final hour = int.parse(mostRecentGuess.timeGuess.split(':')[0]);
+                          final minute = int.parse(mostRecentGuess.timeGuess.split(':')[1]);
+                          final dateTime = DateTime(2000, 1, 1, hour, minute); // Dummy date
+                          formattedTimeGuess = DateFormat('h:mm a').format(dateTime);
+                        } catch (e) {
+                          print('Error formatting time guess on GuessSubmissionEditScreen: ${mostRecentGuess.timeGuess} - $e');
+                        }
+
+                        return Card(
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Target Date: ${DateFormat('MMMM d, yyyy').format(mostRecentGuess.dateGuess.toDate())},', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                Text('Time: $formattedTimeGuess', style: const TextStyle(fontSize: 15)),
+                                Text('Weight: ${formatWeight(mostRecentGuess.weightGuess)}', style: const TextStyle(fontSize: 15)),
+                                Text('Length: ${mostRecentGuess.lengthGuess} inches', style: const TextStyle(fontSize: 15)),
+                                Text('Hair Color: ${mostRecentGuess.hairColorGuess}', style: const TextStyle(fontSize: 15)),
+                                Text('Eye Color: ${mostRecentGuess.eyeColorGuess}', style: const TextStyle(fontSize: 15)),
+                                Text('Looks Like: ${mostRecentGuess.looksLikeGuess}', style: const TextStyle(fontSize: 15)),
+                                if (mostRecentGuess.brycenReactionGuess != null && mostRecentGuess.brycenReactionGuess!.isNotEmpty)
+                                  Text('Brycen\'s Reaction: ${mostRecentGuess.brycenReactionGuess}', style: const TextStyle(fontSize: 15)),
+                                const SizedBox(height: 8),
+                                Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                if (mostRecentGuess.lastEditedAt != null)
+                                  Text('Last Edited: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.lastEditedAt!.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Text('Error fetching guess: ${err.toString()}', textAlign: TextAlign.center,),
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Text('Error fetching guess: ${err.toString()}', textAlign: TextAlign.center,),
-                );
-              },
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
 
-    return AppScaffold(
-      title: 'Submit/Edit Your Guess',
-      body: screenBody,
-      showBottomNavBar: true, 
+        return AppScaffold(
+          title: 'Submit/Edit Your Guess',
+          body: screenBody,
+          showBottomNavBar: true, 
+        );
+      },
+      loading: () => const AppScaffold(
+        title: 'Submit/Edit Your Guess',
+        body: Center(child: CircularProgressIndicator()),
+        showBottomNavBar: true,
+      ),
+      error: (err, stack) => AppScaffold(
+        title: 'Error Loading Status',
+        body: Center(child: Text('Error loading app status: ${err.toString()}')),
+        showBottomNavBar: true,
+      ),
     );
   }
 }
 
 class GuessSubmissionForm extends ConsumerStatefulWidget {
-  const GuessSubmissionForm({super.key});
+  final bool guessingAllowed;
+  const GuessSubmissionForm({super.key, required this.guessingAllowed});
 
   @override
   ConsumerState<GuessSubmissionForm> createState() => _GuessSubmissionFormState();
@@ -250,6 +300,13 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
   }
 
   Future<void> _handleSaveGuess() async {
+    if (!widget.guessingAllowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Guessing is currently not open.')),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       if (_selectedPounds == null || _selectedOunces == null) {
         if (mounted) {
@@ -432,54 +489,60 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       }
     });
 
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          TextFormField(
-            controller: _timeController,
-            decoration: InputDecoration(
-              labelText: 'Time of Birth Guess',
-              hintText: 'HH:MM (24-hour format)',
-               suffixIcon: IconButton(
-                icon: const Icon(Icons.access_time),
-                onPressed: () => _selectTime(context),
+    return AbsorbPointer(
+      absorbing: !widget.guessingAllowed,
+      child: Opacity(
+        opacity: widget.guessingAllowed ? 1.0 : 0.5,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              TextFormField(
+                controller: _timeController,
+                decoration: InputDecoration(
+                  labelText: 'Time of Birth Guess',
+                  hintText: 'HH:MM (24-hour format)',
+                   suffixIcon: IconButton(
+                    icon: const Icon(Icons.access_time),
+                    onPressed: () => _selectTime(context),
+                  ),
+                ),
+                readOnly: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a time';
+                  }
+                  if (!RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$').hasMatch(value)) {
+                     return 'Please use HH:MM format';
+                  }
+                  return null;
+                },
               ),
-            ),
-            readOnly: true,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select a time';
-              }
-              if (!RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$').hasMatch(value)) {
-                 return 'Please use HH:MM format';
-              }
-              return null;
-            },
+              const SizedBox(height: 12),
+              _buildWeightInput(),
+              const SizedBox(height: 12),
+              _buildIntDropdown("Length", _selectedInches, inchOptions, (val) => setState(() => _selectedInches = val), unit: "inches"),
+              const SizedBox(height: 12),
+              _buildDropdown("Hair Color Guess", _hairColorValue, hairColorOptions, (val) => setState(() => _hairColorValue = val)),
+              const SizedBox(height: 12),
+              _buildDropdown("Eye Color Guess", _eyeColorValue, eyeColorOptions, (val) => setState(() => _eyeColorValue = val)),
+              const SizedBox(height: 12),
+              _buildDropdown("Who will baby look like?", _looksLikeValue, looksLikeOptions, (val) => setState(() => _looksLikeValue = val)),
+              const SizedBox(height: 12),
+              _buildDropdown("Brycen\'s Reaction (Dad)", _brycenReactionValue, brycenReactionOptions, (val) => setState(() => _brycenReactionValue = val), isOptional: true),
+              const SizedBox(height: 24),
+              Center(
+                child: ElevatedButton(
+                  onPressed: (_isLoading || !widget.guessingAllowed) ? null : _handleSaveGuess,
+                  child: _isLoading 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                      : Text(_existingGuess != null ? 'Update Guess' : 'Submit Guess'),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          _buildWeightInput(),
-          const SizedBox(height: 12),
-          _buildIntDropdown("Length", _selectedInches, inchOptions, (val) => setState(() => _selectedInches = val), unit: "inches"),
-          const SizedBox(height: 12),
-          _buildDropdown("Hair Color Guess", _hairColorValue, hairColorOptions, (val) => setState(() => _hairColorValue = val)),
-          const SizedBox(height: 12),
-          _buildDropdown("Eye Color Guess", _eyeColorValue, eyeColorOptions, (val) => setState(() => _eyeColorValue = val)),
-          const SizedBox(height: 12),
-          _buildDropdown("Who will baby look like?", _looksLikeValue, looksLikeOptions, (val) => setState(() => _looksLikeValue = val)),
-          const SizedBox(height: 12),
-          _buildDropdown("Brycen\'s Reaction (Dad)", _brycenReactionValue, brycenReactionOptions, (val) => setState(() => _brycenReactionValue = val), isOptional: true),
-          const SizedBox(height: 24),
-          Center(
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleSaveGuess,
-              child: _isLoading 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                  : Text(_existingGuess != null ? 'Update Guess' : 'Submit Guess'),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -15,21 +15,19 @@ enum GuessingStatus {
 class AppStatus {
   final String id; // Typically a fixed ID like 'current_status'
   final GuessingStatus guessingStatus;
-  // final Map<String, dynamic>? actualBabyDetails; // For future use
+  final Map<String, dynamic>? actualBabyDetails; // For actual birth details
 
   AppStatus({
     required this.id,
     required this.guessingStatus,
-    // this.actualBabyDetails,
+    this.actualBabyDetails,
   });
 
   factory AppStatus.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot) {
     final data = snapshot.data();
     if (data == null) {
-      // Return a default status if the document doesn't exist or is empty
-      return AppStatus(id: snapshot.id, guessingStatus: GuessingStatus.closed);
+      return AppStatus(id: snapshot.id, guessingStatus: GuessingStatus.closed, actualBabyDetails: null);
     }
-    
     
     GuessingStatus status;
     final rawStatus = data['guessing_status'] as String?;
@@ -42,21 +40,19 @@ class AppStatus {
           (e) => e.toString() == 'GuessingStatus.' + rawStatus,
         );
       } catch (e) {
-        status = GuessingStatus.closed; // Default if parsing fails
+        status = GuessingStatus.closed;
       }
     }
     
-
     return AppStatus(
       id: snapshot.id,
       guessingStatus: status,
-      // actualBabyDetails: data['actual_baby_details'] as Map<String, dynamic>?,
+      actualBabyDetails: data['actual_baby_details'] as Map<String, dynamic>?,
     );
   }
 
-  // A default status if nothing is found in Firestore
   factory AppStatus.defaults() {
-    return AppStatus(id: 'app_config', guessingStatus: GuessingStatus.closed);
+    return AppStatus(id: 'app_config', guessingStatus: GuessingStatus.closed, actualBabyDetails: null);
   }
 }
 
@@ -79,12 +75,16 @@ class AppStatusService extends _$AppStatusService {
       if (snapshot.exists) {
         return AppStatus.fromFirestore(snapshot);
       } else {
-        // If the document doesn't exist, return a default status.
-        // Optionally, you could create it here with default values.
-        return AppStatus.defaults(); 
+        // If the document doesn't exist, create it with default values.
+        final defaultStatus = AppStatus.defaults();
+        _firestore.collection('app_status').doc(_appStatusDocId).set({
+          'guessing_status': defaultStatus.guessingStatus.toString().split('.').last,
+          'actual_baby_details': defaultStatus.actualBabyDetails,
+          'createdAt': FieldValue.serverTimestamp(), 
+        });
+        return defaultStatus; 
       }
     }).handleError((error, stackTrace) {
-      // Return default status on error as well, or handle more gracefully
       return AppStatus.defaults();
     });
   }
@@ -92,10 +92,21 @@ class AppStatusService extends _$AppStatusService {
   // Method to update guessing status (example, typically for admin)
   Future<void> setGuessingStatus(GuessingStatus status) async {
     try {
-      await _firestore.collection('app_status').doc(_appStatusDocId).set({
+      await _firestore.collection('app_status').doc(_appStatusDocId).update({
         'guessing_status': status.toString().split('.').last,
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> setActualBabyDetails(Map<String, dynamic> details) async {
+    try {
+      await _firestore.collection('app_status').doc(_appStatusDocId).update({
+        'actual_baby_details': details,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       rethrow;
     }
@@ -109,11 +120,11 @@ class AppStatusService extends _$AppStatusService {
 // });
 
 // More direct provider for the AppStatus value from the stream
-final currentAppStatusProvider = StreamProvider<AppStatus>((ref) {
-  final service = ref.watch(appStatusServiceProvider.notifier);
-  if (service == null) {
-    // This case should ideally not happen if providers are set up correctly
-    return Stream.value(AppStatus.defaults()); 
-  }
-  return service.stream;
-}); 
+// final currentAppStatusProvider = StreamProvider.autoDispose<AppStatus>((ref) { // Made it autoDispose for consistency
+//   // Access the stream from the NotifierProvider correctly
+//   return ref.watch(appStatusServiceProvider.stream);
+// });
+
+// Alias appStatusServiceProvider as currentAppStatusProvider if they are intended to be the same.
+// This provides AsyncValue<AppStatus> when watched.
+final currentAppStatusProvider = appStatusServiceProvider; 

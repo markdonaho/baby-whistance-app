@@ -10,22 +10,35 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
 
       // Allow read if the user is authenticated and the userId matches their auth UID (they can read their own doc)
-      // OR if the requesting user has an 'admin' role (for future admin functionality)
-      // For now, without a reliable way to check admin role in rules from client claims,
-      // we might keep it simpler or plan for custom claims.
-      // Let's start with users reading their own data.
-      allow read: if request.auth != null && request.auth.uid == userId;
+      // OR if the requesting user has an 'admin' role.
+      allow read: if request.auth != null && 
+                    (request.auth.uid == userId || 
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
       
-      // Allow update if the user is authenticated, the userId matches their auth UID,
-      // and they are only trying to update allowed fields (e.g., displayName, updatedAt).
-      // They should not be able to change their role, email, or uid via direct update here.
-      allow update: if request.auth != null && request.auth.uid == userId &&
-                      request.resource.data.keys().hasOnly(['displayName', 'updatedAt', 'email', 'createdAt', 'role']) && // List all fields
-                      request.resource.data.email == resource.data.email && // Cannot change email
-                      request.resource.data.uid == resource.data.uid && // Cannot change uid (though it is doc id)
-                      request.resource.data.role == resource.data.role && // Cannot change role (for now)
-                      request.resource.data.createdAt == resource.data.createdAt; // Cannot change createdAt
-                      // Add other immutable fields here
+      // Allow list (for admins to see all users) if the requesting user has an 'admin' role.
+      // Note: Firestore rules for `list` apply to collection queries.
+      allow list: if request.auth != null && 
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+      // Allow update:
+      // 1. If the user is updating their own document and NOT changing their role or other protected fields.
+      // 2. If the requester is an admin, they can ONLY update the 'role' field of ANY user.
+      allow update: if request.auth != null && (
+                      ( // Case 1: User updating their own allowed fields
+                        request.auth.uid == userId &&
+                        request.resource.data.keys().hasOnly(['displayName', 'updatedAt', 'email', 'createdAt', 'role']) &&
+                        request.resource.data.email == resource.data.email &&
+                        request.resource.data.uid == resource.data.uid && // Though uid is doc id, good to be explicit
+                        request.resource.data.role == resource.data.role && // User cannot change their own role
+                        request.resource.data.createdAt == resource.data.createdAt
+                      ) || 
+                      ( // Case 2: Admin updating ONLY the role field of another user
+                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+                        request.resource.data.keys().hasOnly(['role', 'updatedAt']) && // Admin can only change role (and server updates updatedAt)
+                        request.resource.data.size() == 2 && // Ensure only role and updatedAt are being set by admin
+                        (!request.resource.data.keys().hasAny(['email', 'displayName', 'createdAt', 'uid'])) // Explicitly forbid changing other fields
+                      )
+                    );
 
       // Disallow delete for now to prevent users from deleting their own accounts directly through Firestore.
       // Account deletion should be handled via a Firebase Function or specific Admin SDK process.
@@ -52,6 +65,23 @@ service cloud.firestore {
 
       // Allow delete if user is authenticated and the guess's stored userId matches their auth.uid
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // App Status collection (for guessing_status, etc.)
+    match /app_status/{statusId} {
+      // Allow admin to read and write the app_config document.
+      // statusId will typically be 'app_config'.
+      allow read: if request.auth != null && 
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if request.auth != null && 
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+                     statusId == 'app_config' &&
+                     // Admin can update guessing_status and actual_baby_details
+                     (request.resource.data.keys().hasAll(['guessing_status', 'updatedAt']) || 
+                      request.resource.data.keys().hasAll(['actual_baby_details', 'updatedAt']) ||
+                      request.resource.data.keys().hasAll(['guessing_status', 'actual_baby_details', 'updatedAt']) ||
+                      // For initial creation by the service if document doesn't exist
+                      request.resource.data.keys().hasAll(['guessing_status', 'actual_baby_details', 'createdAt'])); 
     }
 
     // Example for other collections (e.g., whistance_data) - to be defined later
