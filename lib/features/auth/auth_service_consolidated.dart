@@ -283,7 +283,11 @@ class AuthController extends _$AuthController {
     return authState.asData?.value;
   }
 
-  Future<void> signUpWithEmailAndPassword(String email, String password, String? displayName) async {
+  Future<void> signUpWithEmailAndPassword({
+    required String email, 
+    required String password, 
+    String? displayName
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard<firebase_auth.User?>(
       () async {

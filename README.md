@@ -1,12 +1,10 @@
 # Baby Whistance App (Name TBD)
 
-## Next Development Focus (as of YYYY-MM-DD)
+## Next Development Focus (as of 2025-05-15)
 
-- **Implement Guess Submission Feature:**
-    - Define Data Model for `guesses` (see Backend section for fields).
-    - Create UI Form in `HomeScreen` (or a new dedicated screen) for submitting guesses.
-    - Implement logic to save guesses to Firestore.
-    - Display the user's current guess(es) on the `HomeScreen`.
+- **Implement Guess Editing Feature:**
+    - Allow users to edit their own guesses (populate form, update logic).
+    - Conditionally disable editing based on `guessing_status` (admin feature).
 
 A Flutter application for family and friends to guess the details of the new baby and share in the journey.
 
@@ -36,16 +34,16 @@ A Flutter application for family and friends to guess the details of the new bab
     - [✅] Assign Roles (manual for now, or part of an invite system later)
     - [✅] Firestore Security Rules for Role-Based Data Access
     - [✅] Conditional UI elements based on role (via appUserProvider)
-- [✅] Password Reset
+- [ ] Password Reset
 - [ ] Testing for Auth Logic
 
-### User Features (Home Page / Main User Flow) 🟨
-- [🟨] **Guess Submission**
-    - [ ] Data Model for Guesses (user_id, date_of_birth_guess, time_of_birth_guess, weight_guess, length_guess, hair_color_guess, eye_color_guess, etc.)
-    - [ ] UI Form for Submitting Guesses
-    - [ ] Save Guesses to Firestore
-    - [ ] Display User's Current Guess(es)
-- [ ] **Guess Editing**
+### User Features (Home Page / Main User Flow) ✅
+- [✅] **Guess Submission**
+    - [✅] Data Model for Guesses (Fixed date, fields for time, weight (lbs/oz), length (inches), hair/eye color, looks like, Brycen reaction)
+    - [✅] UI Form for Submitting Guesses (Dropdowns for most fields, lbs/oz for weight)
+    - [✅] Save Guesses to Firestore
+    - [✅] Display User's Current Guess(es)
+- [⬜] **Guess Editing**
     - [ ] Allow users to edit their own guesses
     - [ ] Editing disabled if `guessing_status` is "closed"
 - [ ] **View Other Users' Guesses (Post-Reveal)**
@@ -114,83 +112,10 @@ A Flutter application for family and friends to guess the details of the new bab
 - [ ] More detailed user profiles
 - [ ] PWA Capabilities
 - [ ] Admin dashboard enhancements
+- [ ] AI generate a photo of the baby based on their guess???
 
 ## Known Issues / Next Steps
 - **P1: Investigate `LoginScreen` unmounting during login process:**
   - **Symptom:** After a successful authentication call, `LoginScreen._login()` finds `!mounted` is true before it can execute its explicit navigation (`context.goNamed`).
   - **Current State:** Login flow *is functional* because `GoRouter` correctly redirects to `/home` after `AuthController` updates its state.
-  - **Concern:** The `LoginScreen` becoming unmounted prematurely is a code smell and could indicate instability or lead to other subtle bugs (e.g., if `_isLoading` isn't reset correctly in all paths, though the current `finally` block handles this).
-  - **Possible Causes to Investigate:**
-    - Unintentional/automatic hot restarts (IDE settings, other tools).
-    - Parent widget rebuilding and replacing `LoginScreen` due to auth state changes.
-    - Aggressive/premature navigation or widget replacement by GoRouter itself during the auth flow.
-    - Deeper Flutter framework issue or subtle bug related to `async/await` and widget lifecycle.
-
-**Temporary Structure Change (for Debugging Auth):**
-- All authentication logic (models, repositories, providers, controller) has been temporarily consolidated into `lib/features/auth/auth_service_consolidated.dart`. This is to simplify debugging of the authentication flow. This structure will be reverted once the underlying issues are resolved.
-
-**Project Structure (Simplified for Debugging & Monolith Approach):**
-- All screen files have been moved to a top-level `lib/screens/` directory.
-- Feature-specific logic (other than auth, which is consolidated) has been temporarily streamlined or will be placed directly if simple enough.
-
-```
-lib/
-├── config/
-│   ├── router/
-│   │   └── app_router.dart   # GoRouter configuration
-│   └── theme/
-│       └── app_theme.dart    # App theme
-├── features/
-│   └── auth/
-│       ├── auth_service_consolidated.dart # CONSOLIDATED AUTH LOGIC
-│       └── auth_service_consolidated.g.dart # Generated for consolidated service
-├── firebase_options.dart     # Firebase configuration (auto-generated)
-├── main.dart                 # Main application entry point
-├── screens/                  # ALL UI Screens
-│   ├── admin_screen.dart
-│   ├── home_screen.dart
-│   ├── login_screen.dart
-│   ├── profile_screen.dart
-│   ├── signup_screen.dart
-│   ├── upload_photo_screen.dart
-│   └── verify_email_screen.dart
-└── shared/
-    └── widgets/
-        └── app_scaffold.dart # Shared scaffold widget
-```
-
-**Brief Description (Updated):**
-
-*   **`main.dart`**: Initializes the app, Firebase, and sets up `MaterialApp.router` with the `appRouter`.
-*   **`config/`**: Contains global application configuration.
-    *   `router/app_router.dart`: Manages all navigation logic using `GoRouter`, defining routes and their corresponding screens (now located in `lib/screens/`).
-    *   `theme/app_theme.dart`: Defines the application's visual theme.
-*   **`features/auth/`**: Contains the consolidated authentication logic.
-    *   `auth_service_consolidated.dart`: (Temporary) All auth logic (model, repository, providers, controller).
-*   **`screens/`**: Contains all the UI screen files for the application.
-*   **`shared/widgets/`**: For common UI components (e.g., `AppScaffold`) used across multiple screens.
-
-*Further consolidation of other features will follow as needed.*
-
-## Development Setup
-
-1.  Ensure Flutter is installed: [Flutter Docs](https://docs.flutter.dev/get-started/install)
-2.  Clone the repository (if applicable).
-3.  Configure Firebase:
-    *   Create a Firebase project.
-    *   Set up a web app in your Firebase project.
-    *   Enable Authentication (Email/Password, Email Verification), Firestore Database, and Storage.
-    *   Add your Firebase project configuration to the Flutter app (e.g., via `firebase_options.dart` after running `flutterfire configure`).
-4.  Get dependencies:
-    ```bash
-    flutter pub get
-    ```
-5.  Run the app:
-    ```bash
-    flutter run -d chrome # For web
-    ```
-
-## Status Legend
-- ✅ Complete
-- 🟨 In Progress
-- ⬜ Not Started
+  - **Concern:** The `LoginScreen` becoming unmounted prematurely is a code smell and could indicate instability or lead to other subtle bugs (e.g., if `_isLoading` isn't reset correctly in all paths, though the current `finally`)

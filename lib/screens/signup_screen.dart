@@ -3,6 +3,7 @@ import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart' show User;
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -37,7 +38,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       });
 
       try {
-        final authController = ref.read(authControllerProvider.notifier);
+        final AuthController authController = ref.read(authControllerProvider.notifier);
         await authController.signUpWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -71,7 +72,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     // Listen to the authControllerProvider for errors or state changes
-    ref.listen<AsyncValue<firebase_auth.User?>>(authControllerProvider, (previous, state) {
+    ref.listen<AsyncValue<User?>>(authControllerProvider, (previous, state) {
       state.whenOrNull(
         error: (error, stackTrace) {
           _scaffoldMessenger.showSnackBar(

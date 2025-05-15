@@ -30,6 +30,28 @@ service cloud.firestore {
       // Disallow delete for now to prevent users from deleting their own accounts directly through Firestore.
       // Account deletion should be handled via a Firebase Function or specific Admin SDK process.
       allow delete: if false;
+
+      // Guesses subcollection rules are NO LONGER HERE as guesses are top-level now
+      // match /guesses/{guessId} { ... } 
+    }
+
+    // New Top-Level Guesses collection
+    match /guesses/{guessId} {
+      // Allow any authenticated user to read any guess (for AllGuessesScreen)
+      allow read: if request.auth != null;
+
+      // Allow create if user is authenticated and the guess's userId matches their auth.uid
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Allow update if user is authenticated, the guess's stored userId matches their auth.uid,
+      // AND they are not trying to change the userId field.
+      allow update: if request.auth != null && 
+                       resource.data.userId == request.auth.uid &&
+                       request.resource.data.userId == resource.data.userId;
+                       // Add other field immutability checks here if needed, e.g., for submittedAt
+
+      // Allow delete if user is authenticated and the guess's stored userId matches their auth.uid
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
     // Example for other collections (e.g., whistance_data) - to be defined later
