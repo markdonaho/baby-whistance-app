@@ -1,5 +1,6 @@
 import 'package:baby_whistance_app/config/router/app_router.dart';
 import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,9 +85,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     final authState = ref.watch(authControllerProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
-      body: Center(
+    final Widget body = Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: ConstrainedBox(
@@ -129,8 +128,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
                       }
-                      if (value.length < 6) { // Example: Firebase default is 6
-                        return 'Password must be at least 6 characters';
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters';
+                      }
+                      if (!value.contains(RegExp(r'[A-Z]'))) {
+                        return 'Password must contain an uppercase letter';
+                      }
+                      if (!value.contains(RegExp(r'[a-z]'))) {
+                        return 'Password must contain a lowercase letter';
+                      }
+                      if (!value.contains(RegExp(r'[0-9]'))) {
+                        return 'Password must contain a number';
+                      }
+                      if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                        return 'Password must contain a special character';
                       }
                       return null;
                     },
@@ -152,7 +163,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ),
           ),
         ),
-      ),
+      );
+
+    return AppScaffold(
+      title: 'Sign Up',
+      body: body,
+      showBottomNavBar: false,
     );
   }
 } 

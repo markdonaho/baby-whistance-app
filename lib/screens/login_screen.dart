@@ -1,4 +1,5 @@
 import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -151,9 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final authStateIsLoading = ref.watch(authControllerProvider.select((s) => s.isLoading));
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Center(
+    final Widget body = Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -230,7 +229,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-      ),
+      );
+
+    return AppScaffold(
+      title: 'Login',
+      body: body,
+      showBottomNavBar: false,
     );
   }
 } 

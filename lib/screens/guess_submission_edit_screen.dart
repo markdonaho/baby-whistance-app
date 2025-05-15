@@ -7,6 +7,7 @@ import 'package:baby_whistance_app/features/guesses/domain/guess_model.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:baby_whistance_app/config/router/app_router.dart';
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 
 // Define the fixed birth date
 final DateTime fixedBirthDate = DateTime(2025, 11, 21);
@@ -77,89 +78,85 @@ class GuessSubmissionEditScreen extends ConsumerWidget { // Renamed class
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (userGuessesAsync is AsyncError) {
-      return Scaffold(body: Center(child: Text('Error loading guesses: ${userGuessesAsync.error}')));
+      return AppScaffold(
+        title: 'Error',
+        body: Center(child: Text('Error loading guesses: ${userGuessesAsync.error}')),
+        showBottomNavBar: true,
+      );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Submit/Edit Your Guess'), // Updated title
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).signOut();
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(
-                'Welcome! Baby boy is due ${DateFormat('MMMM d, yyyy').format(fixedBirthDate)}!',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const Text(
-                'Make your predictions below:',
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              const GuessSubmissionForm(), // This remains the same internal widget
-              const SizedBox(height: 40),
-              const Text('Your Most Recent Guess:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
-              const SizedBox(height: 10),
-              Consumer(
-                builder: (context, ref, child) {
-                  final guessesAsyncValue = ref.watch(userGuessesStreamProvider);
-                  return guessesAsyncValue.when(
-                    data: (guesses) {
-                      if (guesses.isEmpty) {
-                        return const Text('No guess submitted yet.', textAlign: TextAlign.center,);
-                      }
-                      final mostRecentGuess = guesses.first;
-                      return Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Target Date: ${DateFormat('MMMM d, yyyy').format(mostRecentGuess.dateGuess.toDate())},', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 8),
-                              Text('Time: ${mostRecentGuess.timeGuess}', style: const TextStyle(fontSize: 15)),
-                              Text('Weight: ${formatWeight(mostRecentGuess.weightGuess)}', style: const TextStyle(fontSize: 15)),
-                              Text('Length: ${mostRecentGuess.lengthGuess} inches', style: const TextStyle(fontSize: 15)),
-                              Text('Hair Color: ${mostRecentGuess.hairColorGuess}', style: const TextStyle(fontSize: 15)),
-                              Text('Eye Color: ${mostRecentGuess.eyeColorGuess}', style: const TextStyle(fontSize: 15)),
-                              Text('Looks Like: ${mostRecentGuess.looksLikeGuess}', style: const TextStyle(fontSize: 15)),
-                              if (mostRecentGuess.brycenReactionGuess != null && mostRecentGuess.brycenReactionGuess!.isNotEmpty)
-                                Text('Brycen\'s Reaction: ${mostRecentGuess.brycenReactionGuess}', style: const TextStyle(fontSize: 15)),
-                              const SizedBox(height: 8),
-                              Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                              if (mostRecentGuess.lastEditedAt != null)
-                                Text('Last Edited: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.lastEditedAt!.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
+    final Widget screenBody = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              'Welcome! Baby boy is due ${DateFormat('MMMM d, yyyy').format(fixedBirthDate)}!',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const Text(
+              'Make your predictions below:',
+              style: TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            const GuessSubmissionForm(), // This remains the same internal widget
+            const SizedBox(height: 40),
+            const Text('Your Most Recent Guess:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
+            const SizedBox(height: 10),
+            Consumer(
+              builder: (context, ref, child) {
+                final guessesAsyncValue = ref.watch(userGuessesStreamProvider);
+                return guessesAsyncValue.when(
+                  data: (guesses) {
+                    if (guesses.isEmpty) {
+                      return const Text('No guess submitted yet.', textAlign: TextAlign.center,);
+                    }
+                    final mostRecentGuess = guesses.first;
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Target Date: ${DateFormat('MMMM d, yyyy').format(mostRecentGuess.dateGuess.toDate())},', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Text('Time: ${mostRecentGuess.timeGuess}', style: const TextStyle(fontSize: 15)),
+                            Text('Weight: ${formatWeight(mostRecentGuess.weightGuess)}', style: const TextStyle(fontSize: 15)),
+                            Text('Length: ${mostRecentGuess.lengthGuess} inches', style: const TextStyle(fontSize: 15)),
+                            Text('Hair Color: ${mostRecentGuess.hairColorGuess}', style: const TextStyle(fontSize: 15)),
+                            Text('Eye Color: ${mostRecentGuess.eyeColorGuess}', style: const TextStyle(fontSize: 15)),
+                            Text('Looks Like: ${mostRecentGuess.looksLikeGuess}', style: const TextStyle(fontSize: 15)),
+                            if (mostRecentGuess.brycenReactionGuess != null && mostRecentGuess.brycenReactionGuess!.isNotEmpty)
+                              Text('Brycen\'s Reaction: ${mostRecentGuess.brycenReactionGuess}', style: const TextStyle(fontSize: 15)),
+                            const SizedBox(height: 8),
+                            Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            if (mostRecentGuess.lastEditedAt != null)
+                              Text('Last Edited: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.lastEditedAt!.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
                         ),
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Text('Error fetching guess: ${err.toString()}', textAlign: TextAlign.center,),
-                  );
-                },
-              ),
-            ],
-          ),
+                      ),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Text('Error fetching guess: ${err.toString()}', textAlign: TextAlign.center,),
+                );
+              },
+            ),
+          ],
         ),
       ),
+    );
+
+    return AppScaffold(
+      title: 'Submit/Edit Your Guess',
+      body: screenBody,
+      showBottomNavBar: true, 
     );
   }
 }
@@ -285,10 +282,11 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       final int totalOunces = (_selectedPounds! * 16) + _selectedOunces!;
       final int totalInches = _selectedInches!;
       bool success = false;
+      final bool wasEditing = _existingGuess != null && _existingGuess!.id != null; // Store if it was an edit
 
       final guessNotifier = ref.read(guessControllerProvider.notifier);
 
-      if (_existingGuess != null && _existingGuess!.id != null) {
+      if (wasEditing) { // Use the stored boolean
         success = await guessNotifier.updateGuess(
           guessId: _existingGuess!.id!,
           originalSubmittedAt: _existingGuess!.submittedAt,
@@ -317,13 +315,17 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_existingGuess != null ? 'Guess updated successfully!' : 'Guess submitted successfully!')),
+            SnackBar(content: Text(wasEditing ? 'Guess updated successfully!' : 'Guess submitted successfully!')),
           );
+          if (wasEditing) {
+            // Navigate back to AllGuessesScreen only if it was an edit
+            context.goNamed(AppRoute.allGuesses.name);
+          }
         } else {
           final errorState = ref.read(guessControllerProvider);
           if (errorState is! AsyncError) {
              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(_existingGuess != null ? 'Failed to update guess. Please try again.' : 'Failed to submit guess. Please try again.')),
+                SnackBar(content: Text(wasEditing ? 'Failed to update guess. Please try again.' : 'Failed to submit guess. Please try again.')),
              );
           }
         }

@@ -1,5 +1,6 @@
 import 'package:baby_whistance_app/config/router/app_router.dart';
 import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth; // aliased
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,9 +25,7 @@ class VerifyEmailScreen extends ConsumerWidget {
     final authUserAsyncValue = ref.watch(authControllerProvider.select((s) => s.value));
     final firebase_auth.User? authUser = authUserAsyncValue;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Verify Your Email')),
-      body: Center(
+    final Widget body = Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: ConstrainedBox(
@@ -81,7 +80,12 @@ class VerifyEmailScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ),
+      );
+
+    return AppScaffold(
+      title: 'Verify Your Email',
+      body: body,
+      showBottomNavBar: false,
     );
   }
 } 

@@ -1,27 +1,42 @@
+import 'package:baby_whistance_app/shared/widgets/app_bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
 
-class AppScaffold extends StatelessWidget {
+class AppScaffold extends ConsumerWidget {
   final String title;
   final Widget body;
-  final List<Widget>? actions; // Optional actions for the AppBar
+  final bool showBottomNavBar;
+  final Widget? floatingActionButton;
 
   const AppScaffold({
     super.key,
     required this.title,
     required this.body,
-    this.actions,
+    this.showBottomNavBar = true,
+    this.floatingActionButton,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final List<Widget> appBarActions = [
+      IconButton(
+        icon: const Icon(Icons.logout),
+        tooltip: 'Logout',
+        onPressed: () async {
+          await ref.read(authControllerProvider.notifier).signOut();
+        },
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        actions: actions,
-        // Potentially add background color from theme or other styling
+        actions: appBarActions,
       ),
       body: body,
-      // We could add a common FloatingActionButton or BottomNavigationBar here later if needed
+      bottomNavigationBar: showBottomNavBar ? const AppBottomNavBar() : null,
+      floatingActionButton: floatingActionButton,
     );
   }
 } 

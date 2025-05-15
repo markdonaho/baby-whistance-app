@@ -1,3 +1,4 @@
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -5,9 +6,10 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+    return AppScaffold(
+      title: 'Profile',
       body: const Center(child: Text('Profile Screen')),
+      showBottomNavBar: true,
     );
   }
 } 

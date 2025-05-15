@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For DateFormat
 import 'package:go_router/go_router.dart'; // Added for navigation
 import 'package:baby_whistance_app/config/router/app_router.dart'; // Added for AppRoute enum
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 
 // Placeholder provider for fetching a user by ID.
 // You might already have a more robust way to do this, e.g., a UserRepository or similar.
@@ -34,12 +35,7 @@ class AllGuessesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final allGuessesAsyncValue = ref.watch(allGuessesStreamProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('All Guesses'),
-        // Potentially add a button to navigate to submit/edit guess screen
-      ),
-      body: allGuessesAsyncValue.when(
+    final Widget body = allGuessesAsyncValue.when(
         data: (guesses) {
           if (guesses.isEmpty) {
             return const Center(child: Text('No guesses submitted yet from anyone!'));
@@ -54,15 +50,22 @@ class AllGuessesScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error fetching all guesses: ${err.toString()}')),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
+      );
+
+    final FloatingActionButton fab = FloatingActionButton.extended(
         onPressed: () {
           context.goNamed(AppRoute.guessForm.name, queryParameters: {'edit': 'true'});
         },
         icon: const Icon(Icons.edit_note),
         label: const Text('My Guess'),
         tooltip: 'Submit or Edit Your Guess',
-      ),
+      );
+
+    return AppScaffold(
+      title: 'All Guesses',
+      body: body,
+      showBottomNavBar: true,
+      floatingActionButton: fab,
     );
   }
 }

@@ -1,11 +1,11 @@
 # Baby Whistance App (Name TBD)
 
-## Next Development Focus (as of 2025-05-16)
+## Next Development Focus (as of 2025-05-15)
 
-- **Navigate back to AllGuesses when a user who has navigated to edit submits their changes successfully
-- **Implement "Dev Area / Proposed Scoring Rules" Screen:**
-    - Create a simple informational screen for scoring rules and feedback gathering.
-- **(Future) Conditionally disable editing based on `guessing_status` (admin feature).**
+- [ ] **Add AM/PM to diplay of time in my guess and all guesses**
+- [ ] 
+
+
 
 A Flutter application for family and friends to guess the details of the new baby and share in the journey.
 
@@ -19,7 +19,7 @@ A Flutter application for family and friends to guess the details of the new bab
 - [✅] Basic Project Structure (folders for screens, widgets, services, models)
 - [✅] Git Repository Initialization
 - [✅] Basic App Navigation (e.g., using GoRouter or Navigator 2.0) - Decided on GoRouter
-- [✅] Layout Component / Theme Setup
+- [✅] Layout Component / Theme Setup (Includes `AppScaffold` and `AppBottomNavBar`)
 
 ### Authentication (Firebase) 🟨
 - [✅] Email/Password Sign-up
@@ -37,22 +37,21 @@ A Flutter application for family and friends to guess the details of the new bab
     - [✅] Assign Roles (manual for now, or part of an invite system later)
     - [✅] Firestore Security Rules for Role-Based Data Access
     - [✅] Conditional UI elements based on role (via appUserProvider)
-- [ ] Password Reset
-- [ ] Testing for Auth Logic
+- [✅] Password Reset
 
 ### User Features (Home Page / Main User Flow) 🟨
 - [✅] **Guess Submission & Editing (Single Guess per User)**
     - [✅] Data Model for Guesses (Fixed date, fields for time, weight (lbs/oz), length (inches), hair/eye color, looks like, Brycen reaction)
-    - [✅] UI Form for Submitting/Editing Guesses (`HomeScreen`):
+    - [✅] UI Form for Submitting/Editing Guesses (`GuessSubmissionEditScreen`):
         - [✅] Populates with existing guess data for editing.
         - [✅] Handles both new guess submission and updates to existing guess.
         - [✅] Fixed bug with time format preventing guess submission.
+        - [✅] Navigates back to `AllGuessesScreen` after successful edit.
     - [✅] Save/Update Guesses to Firestore (top-level `guesses` collection).
-    - [✅] Display User's Current Guess on `HomeScreen`.
+    - [✅] Display User's Current Guess on `GuessSubmissionEditScreen`.
 - [⬜️] **Display All Guesses (`AllGuessesScreen`)**
     - [✅] Data providers created to fetch all guesses (`allGuessesStreamProvider`).
-    - [✅] Basic `AllGuessesScreen` widget created (displays list, needs navigation integration & UI refinement).
-    - [ ] Allow users to view other users' guesses.
+    - [✅] Basic `AllGuessesScreen` widget created.
 - [ ] **View Baby Details (Post-Reveal)**
     - [ ] Display actual baby details once entered by an Admin/Whistance.
 
@@ -77,13 +76,14 @@ A Flutter application for family and friends to guess the details of the new bab
         - [ ] When "revealed", actual details are shown, and perhaps all guesses.
     - [ ] Input Actual Baby Details (if not handled by "Whistance" role)
     - [ ] (Optional) Trigger calculation of "winners" or closest guesses.
+    - [ ] Conditionally disable editing based on `guessing_status` (admin feature).
 - [ ] **Content Management (Photos)**
     - [ ] Ability to moderate/delete uploaded photos if necessary.
 
 ### UI/UX ⬜
-- [ ] Basic Responsive Layout for Web (and mobile if also targeting native)
-- [ ] Consistent Theme and Styling
-- [ ] User-Friendly Navigation
+- [✅] Basic Responsive Layout for Web (and mobile if also targeting native) - Using `AppScaffold`
+- [✅] Consistent Theme and Styling - Using `AppScaffold`
+- [✅] User-Friendly Navigation - Implemented `AppBottomNavBar`
 - [ ] Loading States and Feedback
 - [ ] Error Handling and User Notifications
 
@@ -102,8 +102,8 @@ A Flutter application for family and friends to guess the details of the new bab
 - [✅] **Firebase Storage:**
     - [ ] Rules for photo uploads (only authenticated users, size limits, etc.)
 - [✅] **Firebase Authentication:**
-    - [ ] Standard email/password setup.
-    - [ ] Email verification enforcement.
+    - [✅] Standard email/password setup.
+    - [✅] Email verification enforcement.
 - [✅] **Firestore Security Rules:** (Updated for `guesses` collection)
     - [✅] Users can only create/update/delete their own guesses.
     - [✅] All authenticated users can read all guesses.
@@ -121,10 +121,10 @@ A Flutter application for family and friends to guess the details of the new bab
 - [ ] Admin dashboard enhancements
 - [ ] AI generate a photo of the baby based on their guess???
 
-## Known Issues / Next Steps
+
+## Known Issues
 - **P1: Investigate `LoginScreen` unmounting during login process:**
   - **Symptom:** After a successful authentication call, `LoginScreen._login()` finds `!mounted` is true before it can execute its explicit navigation (`context.goNamed`).
   - **Current State:** Login flow *is functional* because `GoRouter` correctly redirects to `/home` after `AuthController` updates its state.
   - **Concern:** The `LoginScreen` becoming unmounted prematurely is a code smell and could indicate instability or lead to other subtle bugs (e.g., if `_isLoading` isn't reset correctly in all paths, though the current `finally`
     block in `LoginScreen._login()` seems to handle it for now).
-- **Firebase Index for `guesses` collection (userId ASC, submittedAt DESC) created.**

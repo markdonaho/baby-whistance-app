@@ -1,3 +1,4 @@
+import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
 
 class AdminScreen extends StatelessWidget {
@@ -5,9 +6,10 @@ class AdminScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Admin')),
+    return AppScaffold(
+      title: 'Admin',
       body: const Center(child: Text('Admin Screen')),
+      showBottomNavBar: false, 
     );
   }
 } 
