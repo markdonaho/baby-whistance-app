@@ -102,6 +102,7 @@ A Flutter application for family and friends to guess the details of the new bab
 - [x] More detailed user profiles
 - [ ] PWA Capabilities
 - [ ] Dev area, rules and whatnot
+- [ ] Boy color themes
 
 ### Known Issues(Ignore unless user EXPLICITLY ASKS ABOUT IT)
 - **P1: Investigate `LoginScreen` unmounting during login process:**
