@@ -57,6 +57,7 @@ class GuessController extends StateNotifier<AsyncValue<void>> {
 
   Future<bool> updateGuess({
     required String guessId, // ID of the guess to update
+    required Timestamp originalSubmittedAt, // Original submission timestamp
     required Timestamp dateGuess,
     required String timeGuess,
     required int weightGuess,
@@ -75,9 +76,8 @@ class GuessController extends StateNotifier<AsyncValue<void>> {
       final updatedGuess = Guess(
         id: guessId, // Pass the existing ID
         userId: _userId!, 
-        submittedAt: Timestamp.now(), // Consider if submittedAt should be updated or a new lastEditedAt field added
-        // For now, we'll update submittedAt to reflect the latest edit time.
-        // If you need to preserve original submission time, add a 'lastEditedAt' field to Guess model.
+        submittedAt: originalSubmittedAt, // Preserve original submission time
+        lastEditedAt: Timestamp.now(), // Set last edited time to now
         dateGuess: dateGuess,
         timeGuess: timeGuess,
         weightGuess: weightGuess,

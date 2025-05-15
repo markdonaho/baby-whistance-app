@@ -7,20 +7,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_whistance_app/screens/login_screen.dart';
 import 'package:baby_whistance_app/screens/signup_screen.dart';
 import 'package:baby_whistance_app/screens/verify_email_screen.dart';
-import 'package:baby_whistance_app/screens/home_screen.dart';
+import 'package:baby_whistance_app/screens/guess_submission_edit_screen.dart';
 import 'package:baby_whistance_app/screens/upload_photo_screen.dart';
 import 'package:baby_whistance_app/screens/admin_screen.dart';
 import 'package:baby_whistance_app/screens/profile_screen.dart';
+import 'package:baby_whistance_app/screens/all_guesses_screen.dart';
+import 'package:baby_whistance_app/screens/dev_area_screen.dart';
 
 // Enum for route names to ensure type safety and centralize route management
 enum AppRoute {
   login,
   signup,
   verifyEmail,
-  home,
+  guessForm,
   uploadPhoto,
   admin,
   profile,
+  allGuesses,
+  devArea,
 }
 
 // Provider for the GoRouter instance
@@ -47,9 +51,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const VerifyEmailScreen(),
       ),
       GoRoute(
-        path: '/home',
-        name: AppRoute.home.name,
-        builder: (context, state) => const HomeScreen(),
+        path: '/guess-form',
+        name: AppRoute.guessForm.name,
+        builder: (context, state) => const GuessSubmissionEditScreen(),
       ),
       GoRoute(
         path: '/upload-photo',
@@ -65,6 +69,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         name: AppRoute.profile.name,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/all-guesses',
+        name: AppRoute.allGuesses.name,
+        builder: (context, state) => const AllGuessesScreen(),
+      ),
+      GoRoute(
+        path: '/dev-area',
+        name: AppRoute.devArea.name,
+        builder: (context, state) => const DevAreaScreen(),
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) {
@@ -88,7 +102,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final goingToVerifyEmail = currentLocationPath == '/verify-email';
 
       final publicPaths = ['/login', '/signup'];
-      final emailVerifiedPaths = ['/home', '/profile', '/upload-photo', '/admin'];
+      final emailVerifiedPaths = ['/guess-form', '/profile', '/upload-photo', '/admin', '/all-guesses', '/dev-area'];
 
       final isPublicRoute = publicPaths.contains(currentLocationPath);
       final isEmailVerifiedRoute = emailVerifiedPaths.contains(currentLocationPath);
@@ -120,7 +134,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // User is loggedIn AND verified
       if (goingToLogin || goingToSignup || goingToVerifyEmail) {
-        return '/home'; // LoggedIn and verified, but on auth pages, redirect to home
+        return '/guess-form'; // LoggedIn and verified, but on auth pages, redirect to guess-form
       }
 
       return null; // All other cases, allow navigation

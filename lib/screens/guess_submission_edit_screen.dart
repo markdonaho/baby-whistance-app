@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart'; // Updated import
+import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
 import 'package:baby_whistance_app/features/guesses/application/guess_controller.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Required for Timestamp
-import 'package:baby_whistance_app/features/guesses/domain/guess_model.dart'; // Import Guess model
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:baby_whistance_app/features/guesses/domain/guess_model.dart';
+import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import 'package:baby_whistance_app/config/router/app_router.dart';
 
 // Define the fixed birth date
 final DateTime fixedBirthDate = DateTime(2025, 11, 21);
@@ -28,8 +30,8 @@ String formatWeight(int? totalOunces) {
   return "$pounds lbs $ounces oz";
 }
 
-class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+class GuessSubmissionEditScreen extends ConsumerWidget { // Renamed class
+  const GuessSubmissionEditScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,13 +44,45 @@ class HomeScreen extends ConsumerWidget {
             SnackBar(content: Text(state.error.toString())),
           );
         }
-        // Optionally handle AsyncLoading or AsyncData for global messages
       }
     );
 
+    // Check if we are in "edit mode" from query parameters
+    final String? editMode = GoRouterState.of(context).uri.queryParameters['edit'];
+
+    // Listen to user's guesses to potentially redirect
+    ref.listen<AsyncValue<List<Guess>>>(
+      userGuessesStreamProvider,
+      (previous, next) {
+        next.when(
+          data: (guesses) {
+            final currentLocation = GoRouter.of(context).routerDelegate.currentConfiguration.fullPath;
+            // Only redirect if on this screen, guesses are present, AND not in edit mode
+            if (currentLocation == '/guess-form' && guesses.isNotEmpty && editMode != 'true') {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (ModalRoute.of(context)?.isCurrent ?? false) {
+                   context.goNamed(AppRoute.allGuesses.name);
+                }
+              });
+            }
+          },
+          loading: () {},
+          error: (err, stack) {},
+        );
+      },
+    );
+
+    final userGuessesAsync = ref.watch(userGuessesStreamProvider);
+    if (userGuessesAsync is AsyncLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (userGuessesAsync is AsyncError) {
+      return Scaffold(body: Center(child: Text('Error loading guesses: ${userGuessesAsync.error}')));
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home - Submit Your Guess!'),
+        title: const Text('Submit/Edit Your Guess'), // Updated title
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -64,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch, // For better card width
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text(
                 'Welcome! Baby boy is due ${DateFormat('MMMM d, yyyy').format(fixedBirthDate)}!',
@@ -77,7 +111,7 @@ class HomeScreen extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              const GuessSubmissionForm(),
+              const GuessSubmissionForm(), // This remains the same internal widget
               const SizedBox(height: 40),
               const Text('Your Most Recent Guess:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center,),
               const SizedBox(height: 10),
@@ -110,6 +144,8 @@ class HomeScreen extends ConsumerWidget {
                                 Text('Brycen\'s Reaction: ${mostRecentGuess.brycenReactionGuess}', style: const TextStyle(fontSize: 15)),
                               const SizedBox(height: 8),
                               Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              if (mostRecentGuess.lastEditedAt != null)
+                                Text('Last Edited: ${DateFormat('MMM d, yyyy HH:mm').format(mostRecentGuess.lastEditedAt!.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                             ],
                           ),
                         ),
@@ -145,18 +181,17 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
   String? _brycenReactionValue;
   int? _selectedPounds;
   int? _selectedOunces;
-  int? _selectedInches; // For length
+  int? _selectedInches;
   bool _isEditingWeight = false;
 
-  Guess? _existingGuess; // To store the existing guess if any
-  bool _isFormPopulatedFromGuess = false; // To prevent re-populating on every rebuild
+  Guess? _existingGuess;
+  bool _isFormPopulatedFromGuess = false;
 
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // It's better to listen or use a Consumer in build for Riverpod
   }
   
   void _populateFormFromGuess(Guess guess) {
@@ -173,7 +208,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
     _eyeColorValue = guess.eyeColorGuess;
     _looksLikeValue = guess.looksLikeGuess;
     _brycenReactionValue = guess.brycenReactionGuess;
-    _isEditingWeight = false; // Reset weight editing state
+    _isEditingWeight = false;
   }
 
   void _resetFormFields() {
@@ -238,7 +273,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       if (_hairColorValue == null || _eyeColorValue == null || _looksLikeValue == null) {
          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Please make a selection for all dropdown fields (except Brycen's reaction).")),
+            const SnackBar(content: Text("Please make a selection for all dropdown fields (except Brycen\'s reaction).")),
             );
         }
         return;
@@ -251,11 +286,13 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       final int totalInches = _selectedInches!;
       bool success = false;
 
+      final guessNotifier = ref.read(guessControllerProvider.notifier);
+
       if (_existingGuess != null && _existingGuess!.id != null) {
-        // Update existing guess
-        success = await ref.read(guessControllerProvider.notifier).updateGuess(
+        success = await guessNotifier.updateGuess(
           guessId: _existingGuess!.id!,
-          dateGuess: dateGuess, // date is fixed, so it\'s the same
+          originalSubmittedAt: _existingGuess!.submittedAt,
+          dateGuess: dateGuess, 
           timeGuess: _timeController.text,
           weightGuess: totalOunces,
           lengthGuess: totalInches,
@@ -265,8 +302,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
           brycenReactionGuess: _brycenReactionValue,
         );
       } else {
-        // Submit new guess
-        success = await ref.read(guessControllerProvider.notifier).submitGuess(
+        success = await guessNotifier.submitGuess(
           dateGuess: dateGuess,
           timeGuess: _timeController.text,
           weightGuess: totalOunces,
@@ -283,18 +319,9 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(_existingGuess != null ? 'Guess updated successfully!' : 'Guess submitted successfully!')),
           );
-          // Don't reset form on successful update, user might want to see their saved values
-          // If it was a new submission, we can clear.
-          // For now, let\'s be consistent and not auto-clear/reset.
-          // User can navigate away or app can redirect.
-          // _resetFormFields(); // Decided against auto-resetting for now.
-          // If staying on the form, ensure _existingGuess is updated with new submittedAt if that changed.
-          // This might require re-fetching or getting the updated guess back.
-          // For simplicity, current data in form is the "latest".
-          
         } else {
           final errorState = ref.read(guessControllerProvider);
-          if (errorState is! AsyncError) { // If it\'s already an AsyncError, the global listener in HomeScreen handles it.
+          if (errorState is! AsyncError) {
              ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(_existingGuess != null ? 'Failed to update guess. Please try again.' : 'Failed to submit guess. Please try again.')),
              );
@@ -359,7 +386,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       return InputDecorator(
           decoration: InputDecoration(
             labelText: "Weight Guess",
-            contentPadding: const EdgeInsets.symmetric(vertical: 8.0), // Adjust padding to align better
+            contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
           ),
           child: TextButton(
             style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50,30), alignment: Alignment.centerLeft),
@@ -372,20 +399,15 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch for existing guesses
     final userGuessesAsync = ref.watch(userGuessesStreamProvider);
 
     userGuessesAsync.whenData((guesses) {
       if (guesses.isNotEmpty) {
         final currentGuess = guesses.first;
-        // If _existingGuess is null or different from currentGuess, populate the form.
-        // Use a flag to ensure this happens only once after the guess is loaded,
-        // or if the guess changes (e.g. submitted elsewhere and stream updates).
         if (!_isFormPopulatedFromGuess || (_existingGuess != null && _existingGuess!.id != currentGuess.id)) {
-           // Check if widget is still mounted and frame is ready
           if (mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) { // Check mounted again inside callback
+              if (mounted) {
                 setState(() {
                   _existingGuess = currentGuess;
                   _populateFormFromGuess(currentGuess);
@@ -396,12 +418,11 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
           }
         }
       } else {
-        // No guess exists, if form was populated, clear it.
         if (_isFormPopulatedFromGuess && mounted) {
            WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               setState(() {
-                 _resetFormFields(); // Clear form if guess was deleted/became empty
+                 _resetFormFields();
               });
             }
            });
@@ -446,7 +467,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
           const SizedBox(height: 12),
           _buildDropdown("Who will baby look like?", _looksLikeValue, looksLikeOptions, (val) => setState(() => _looksLikeValue = val)),
           const SizedBox(height: 12),
-          _buildDropdown("Brycen's Reaction (Dad)", _brycenReactionValue, brycenReactionOptions, (val) => setState(() => _brycenReactionValue = val), isOptional: true),
+          _buildDropdown("Brycen\'s Reaction (Dad)", _brycenReactionValue, brycenReactionOptions, (val) => setState(() => _brycenReactionValue = val), isOptional: true),
           const SizedBox(height: 24),
           Center(
             child: ElevatedButton(

@@ -1,11 +1,13 @@
-import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart'; // For appUserProvider (assuming it exists and provides AppUser)
-import 'package:baby_whistance_app/features/auth/domain/app_user_model.dart'; // Assuming AppUser model
+import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart'; // Provides AppUser and firestoreProvider (indirectly via other providers if not directly)
+// import 'package:baby_whistance_app/features/auth/domain/app_user_model.dart'; // REMOVE this incorrect import
 import 'package:baby_whistance_app/features/guesses/application/guess_controller.dart';
 import 'package:baby_whistance_app/features/guesses/domain/guess_model.dart';
-import 'package:baby_whistance_app/screens/home_screen.dart'; // For formatWeight and fixedBirthDate, DateFormat
+import 'package:baby_whistance_app/screens/guess_submission_edit_screen.dart'; // New import for formatWeight
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // For DateFormat
+import 'package:go_router/go_router.dart'; // Added for navigation
+import 'package:baby_whistance_app/config/router/app_router.dart'; // Added for AppRoute enum
 
 // Placeholder provider for fetching a user by ID.
 // You might already have a more robust way to do this, e.g., a UserRepository or similar.
@@ -14,10 +16,10 @@ final userProvider = FutureProvider.family<AppUser?, String>((ref, userId) async
   // It assumes appUserProvider gives the current user, which is not what we want here.
   // We need a way to fetch *any* user by their ID.
   // For now, it will try to get it from a Firestore 'users' collection.
-  final firestore = ref.watch(firestoreProvider); // Assuming firestoreProvider is accessible
+  final firestore = ref.watch(firebaseFirestoreInstanceProvider); // Corrected to use firebaseFirestoreInstanceProvider
   final doc = await firestore.collection('users').doc(userId).get();
   if (doc.exists) {
-    return AppUser.fromFirestore(doc.data() as Map<String, dynamic>, doc.id);
+    return AppUser.fromFirestore(doc, null); // Pass the snapshot directly
   }
   return null;
 });
@@ -52,6 +54,14 @@ class AllGuessesScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error fetching all guesses: ${err.toString()}')),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          context.goNamed(AppRoute.guessForm.name, queryParameters: {'edit': 'true'});
+        },
+        icon: const Icon(Icons.edit_note),
+        label: const Text('My Guess'),
+        tooltip: 'Submit or Edit Your Guess',
       ),
     );
   }

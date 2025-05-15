@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// Removed: import 'package:baby_whistance_app/features/auth/application/auth_controller.dart';
 import 'package:baby_whistance_app/config/router/app_router.dart'; // For route names
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -51,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         }
 
         if (user != null && user.emailVerified == true) {
-          context.goNamed(AppRoute.home.name);
+          context.goNamed(AppRoute.guessForm.name);
         } else if (user != null && user.emailVerified == false) {
         } else if (user == null) {
         } else {
