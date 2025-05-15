@@ -32,6 +32,16 @@ exports.calculateAndSaveScores = functions.https.onCall(async (data, context) =>
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
   }
+  // Custom claim check removed based on user request.
+  // Original check:
+  // if (context.auth.token.admin !== true) {
+  //   functions.logger.error("Permission denied. User does not have admin privileges.", {
+  //     userId: context.auth.uid,
+  //     claims: context.auth.token,
+  //   });
+  //   throw new functions.https.HttpsError("permission-denied", "Permission denied. User does not have admin privileges.");
+  // }
+
   functions.logger.info("calculateAndSaveScores called by user:", context.auth.uid);
 
   // 2. Fetch Actual Baby Details

@@ -90,6 +90,12 @@ class AllGuessesScreen extends ConsumerWidget {
     final allGuessesAsyncValue = ref.watch(allGuessesStreamProvider);
     final appStatusAsync = ref.watch(currentAppStatusProvider);
 
+    // Determine if scores should be shown (guessing revealed and actual details present)
+    final showScores = appStatusAsync.maybeWhen(
+      data: (status) => status.guessingStatus == GuessingStatus.revealed && status.actualBabyDetails != null,
+      orElse: () => false,
+    );
+
     return AppScaffold(
       title: 'All Guesses',
       body: appStatusAsync.when(
@@ -111,7 +117,7 @@ class AllGuessesScreen extends ConsumerWidget {
                       itemCount: guesses.length,
                       itemBuilder: (context, index) {
                         final guess = guesses[index];
-                        return GuessListItem(guess: guess);
+                        return GuessListItem(guess: guess, showScores: showScores);
                       },
                     );
                   },
@@ -147,57 +153,129 @@ class AllGuessesScreen extends ConsumerWidget {
   }
 }
 
-class GuessListItem extends ConsumerWidget {
+class GuessListItem extends ConsumerStatefulWidget {
   final Guess guess;
-  const GuessListItem({super.key, required this.guess});
+  final bool showScores;
+  const GuessListItem({super.key, required this.guess, required this.showScores});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Fetch the user's display name
-    final userAsyncValue = ref.watch(userProvider(guess.userId));
+  ConsumerState<GuessListItem> createState() => _GuessListItemState();
+}
 
-    String formattedTimeGuess = guess.timeGuess;
+class _GuessListItemState extends ConsumerState<GuessListItem> {
+  bool _isExpanded = false;
+
+  List<Widget> _buildScoreBreakdownDetails(Map<String, dynamic> breakdown, BuildContext context) {
+    final List<Widget> details = [];
+    final textStyle = Theme.of(context).textTheme.bodyMedium;
+
+    breakdown.forEach((key, value) {
+      String displayKey = key.replaceAll('_', ' ').split(' ').map((str) => str[0].toUpperCase() + str.substring(1)).join(' ');
+      if (value is Map && value.containsKey('points') && value.containsKey('detail')) {
+        details.add(Text('$displayKey: ${value["points"]} pts (${value["detail"]})', style: textStyle));
+      } else if (value is num) {
+        details.add(Text('$displayKey: $value pts', style: textStyle));
+      } else {
+        details.add(Text('$displayKey: $value', style: textStyle));
+      }
+    });
+    if (details.isEmpty) {
+      details.add(Text('No breakdown available.', style: textStyle?.copyWith(fontStyle: FontStyle.italic)));
+    }
+    return details;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userAsyncValue = ref.watch(userProvider(widget.guess.userId));
+
+    String formattedTimeGuess = widget.guess.timeGuess;
     try {
-      final hour = int.parse(guess.timeGuess.split(':')[0]);
-      final minute = int.parse(guess.timeGuess.split(':')[1]);
-      final dateTime = DateTime(2000, 1, 1, hour, minute); // Dummy date
+      final hour = int.parse(widget.guess.timeGuess.split(':')[0]);
+      final minute = int.parse(widget.guess.timeGuess.split(':')[1]);
+      final dateTime = DateTime(2000, 1, 1, hour, minute);
       formattedTimeGuess = DateFormat('h:mm a').format(dateTime);
     } catch (e) {
-      // Log error or handle gracefully if time format is unexpected
-      print('Error formatting time guess: ${guess.timeGuess} - $e');
+      print('Error formatting time guess: ${widget.guess.timeGuess} - $e');
     }
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            userAsyncValue.when(
-              data: (appUser) => Text(
-                appUser?.displayName ?? 'Unknown User',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+    final cardContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        userAsyncValue.when(
+          data: (appUser) => Text(
+            appUser?.displayName ?? 'Unknown User',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          loading: () => const Text('Loading user...', style: TextStyle(fontStyle: FontStyle.italic)),
+          error: (err, stack) => Text('Error loading user: ${err.toString()}', style: const TextStyle(color: Colors.red)),
+        ),
+        const SizedBox(height: 8),
+        Text('Target Date: ${DateFormat('MMMM d, yyyy').format(widget.guess.dateGuess.toDate())}'),
+        Text('Time: $formattedTimeGuess'),
+        Text('Weight: ${formatWeight(widget.guess.weightGuess)}'),
+        Text('Length: ${widget.guess.lengthGuess} inches'),
+        Text('Hair Color: ${widget.guess.hairColorGuess}'),
+        Text('Eye Color: ${widget.guess.eyeColorGuess}'),
+        Text('Looks Like: ${widget.guess.looksLikeGuess}'),
+        if (widget.guess.brycenReactionGuess != null && widget.guess.brycenReactionGuess!.isNotEmpty)
+          Text('Brycen\'s Reaction: ${widget.guess.brycenReactionGuess}'),
+        
+        if (widget.showScores && widget.guess.totalScore != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Total Score: ${widget.guess.totalScore}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(widget.guess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+
+    if (widget.showScores && widget.guess.scoreBreakdown != null && widget.guess.scoreBreakdown!.isNotEmpty) {
+      return Card(
+        elevation: 2,
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: ExpansionTile(
+          key: PageStorageKey(widget.guess.id),
+          title: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: cardContent,
+          ),
+          onExpansionChanged: (bool expanded) {
+            setState(() {
+              _isExpanded = expanded;
+            });
+          },
+          initiallyExpanded: _isExpanded,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0, top:0.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Score Breakdown:', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  ..._buildScoreBreakdownDetails(widget.guess.scoreBreakdown!, context),
+                ],
               ),
-              loading: () => const Text('Loading user...', style: TextStyle(fontStyle: FontStyle.italic)),
-              error: (err, stack) => Text('Error loading user: ${err.toString()}', style: const TextStyle(color: Colors.red)),
-            ),
-            const SizedBox(height: 8),
-            Text('Target Date: ${DateFormat('MMMM d, yyyy').format(guess.dateGuess.toDate())}'),
-            Text('Time: $formattedTimeGuess'),
-            Text('Weight: ${formatWeight(guess.weightGuess)}'), // Using formatWeight from home_screen
-            Text('Length: ${guess.lengthGuess} inches'),
-            Text('Hair Color: ${guess.hairColorGuess}'),
-            Text('Eye Color: ${guess.eyeColorGuess}'),
-            Text('Looks Like: ${guess.looksLikeGuess}'),
-            if (guess.brycenReactionGuess != null && guess.brycenReactionGuess!.isNotEmpty)
-              Text('Brycen\'s Reaction: ${guess.brycenReactionGuess}'),
-            const SizedBox(height: 8),
-            Text('Submitted: ${DateFormat('MMM d, yyyy HH:mm').format(guess.submittedAt.toDate())}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            )
           ],
         ),
-      ),
-    );
+      );
+    } else {
+      return Card(
+        elevation: 2,
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: cardContent,
+        ),
+      );
+    }
   }
 } 

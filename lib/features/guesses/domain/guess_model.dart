@@ -14,6 +14,10 @@ class Guess {
   final String looksLikeGuess;
   final String? brycenReactionGuess;
 
+  // Added for scoring
+  final int? totalScore;
+  final Map<String, dynamic>? scoreBreakdown;
+
   Guess({
     this.id,
     required this.userId,
@@ -27,6 +31,8 @@ class Guess {
     required this.eyeColorGuess,
     required this.looksLikeGuess,
     this.brycenReactionGuess,
+    this.totalScore, // Added
+    this.scoreBreakdown, // Added
   });
 
   // Factory constructor to create a Guess from a Firestore document
@@ -45,6 +51,9 @@ class Guess {
       eyeColorGuess: data?['eyeColorGuess'] as String? ?? '',
       looksLikeGuess: data?['looksLikeGuess'] as String? ?? '',
       brycenReactionGuess: data?['brycenReactionGuess'] as String?,
+      // Added for scoring
+      totalScore: (data?['total_score'] as num?)?.toInt(), // Firestore field is likely total_score
+      scoreBreakdown: data?['score_breakdown'] as Map<String, dynamic>?, // Firestore field is likely score_breakdown
     );
   }
 
@@ -62,6 +71,8 @@ class Guess {
       'eyeColorGuess': eyeColorGuess,
       'looksLikeGuess': looksLikeGuess,
       if (brycenReactionGuess != null) 'brycenReactionGuess': brycenReactionGuess,
+      // Note: totalScore and scoreBreakdown are typically written by a backend function,
+      // so they are not included here. If client-side updates were needed, they'd be added.
     };
   }
 
@@ -80,6 +91,9 @@ class Guess {
     String? looksLikeGuess,
     String? brycenReactionGuess,
     bool setBrycenReactionToNull = false,
+    // Added for scoring
+    int? totalScore,
+    Map<String, dynamic>? scoreBreakdown,
   }) {
     return Guess(
       id: id ?? this.id,
@@ -94,6 +108,9 @@ class Guess {
       eyeColorGuess: eyeColorGuess ?? this.eyeColorGuess,
       looksLikeGuess: looksLikeGuess ?? this.looksLikeGuess,
       brycenReactionGuess: setBrycenReactionToNull ? null : (brycenReactionGuess ?? this.brycenReactionGuess),
+      // Added for scoring
+      totalScore: totalScore ?? this.totalScore,
+      scoreBreakdown: scoreBreakdown ?? this.scoreBreakdown,
     );
   }
 } 

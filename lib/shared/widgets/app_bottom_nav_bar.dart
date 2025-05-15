@@ -56,14 +56,14 @@ class AppBottomNavBar extends ConsumerWidget {
       navBarRoutes.add(AppRoute.devArea);
     }
 
-    // Profile is always available
-    navBarItems.add(
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.person_outline), // Changed to person_outline
-        label: 'Profile',
-      ),
-    );
-    navBarRoutes.add(AppRoute.profile);
+    // // Profile is always available
+    // navBarItems.add(
+    //   const BottomNavigationBarItem(
+    //     icon: Icon(Icons.person_outline), // Changed to person_outline
+    //     label: 'Profile',
+    //   ),
+    // );
+    // navBarRoutes.add(AppRoute.profile);
 
     int currentIndex = 0;
     // Order of checks matters for currentIndex determination based on typical usage flow

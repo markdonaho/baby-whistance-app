@@ -1,7 +1,16 @@
 # Baby Whistance App (Name TBD)
 
 ## Next Development Focus (as of 2025-05-15)
+- [ ] **Investigate Guess Submission Issue for 'user' Role:** Users with the 'user' role are reportedly unable to submit guesses even when `guessing_status` is "open". Diagnose and resolve the root cause (client-side validation, auth state, form population, or other).
+remaining stuff:
 
+    - [ ] **Implement Feedback Mechanism (Dev Area):**
+        - [ ] Create `feedback` collection in Firestore with appropriate fields (userId, timestamp, feedbackText, etc.).
+        - [ ] Define Firestore security rules for the `feedback` collection (allow authenticated create, admin/Whistance manage).
+        - [ ] Implement UI in `DevAreaScreen` for submitting and viewing feedback (role-dependent).
+- [ ] Boy color themes
+- [ ] Games
+- [ ] "Closest Guess" Highlighting / Leaderboard
 - [ ] ****
 
 
