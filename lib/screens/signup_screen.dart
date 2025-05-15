@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User;
+import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuthException;
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -76,9 +77,33 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     ref.listen<AsyncValue<User?>>(authControllerProvider, (previous, state) {
       state.whenOrNull(
         error: (error, stackTrace) {
-          _scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text(error.toString())),
-          );
+          String errorMessage = "An unexpected error occurred during sign up. Please try again.";
+          if (error is FirebaseAuthException) {
+            if (error.code == 'weak-password') {
+              errorMessage = 'The password provided is too weak.';
+            } else if (error.code == 'email-already-in-use') {
+              errorMessage = 'An account already exists for that email.';
+            } else if (error.code == 'invalid-email') {
+              errorMessage = 'The email address is not valid.';
+            } else if (error.code == 'operation-not-allowed') {
+              errorMessage = 'Sign up with email and password is not enabled.'; // Should be enabled in Firebase console
+            }
+             // Use _scaffoldMessenger if initialized, otherwise use ScaffoldMessenger.of(context)
+            // It seems _scaffoldMessenger might not be initialized if an error occurs very early.
+            // Using ScaffoldMessenger.of(context) directly is safer within listeners if context is available.
+            if (mounted) { // Ensure widget is still in the tree
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(errorMessage)),
+              );
+            }
+          } else {
+            // Handle non-FirebaseAuth errors or show a generic message
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(error.toString())),
+              );
+            }
+          }
         },
       );
     });

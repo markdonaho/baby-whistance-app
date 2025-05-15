@@ -8,7 +8,6 @@ import 'package:baby_whistance_app/screens/login_screen.dart';
 import 'package:baby_whistance_app/screens/signup_screen.dart';
 import 'package:baby_whistance_app/screens/verify_email_screen.dart';
 import 'package:baby_whistance_app/screens/guess_submission_edit_screen.dart';
-import 'package:baby_whistance_app/screens/upload_photo_screen.dart';
 import 'package:baby_whistance_app/screens/admin_screen.dart';
 import 'package:baby_whistance_app/screens/profile_screen.dart';
 import 'package:baby_whistance_app/screens/all_guesses_screen.dart';
@@ -22,7 +21,6 @@ enum AppRoute {
   signup,
   verifyEmail,
   guessForm,
-  uploadPhoto,
   admin,
   adminUserManagement,
   adminEnterBabyDetails,
@@ -58,11 +56,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/guess-form',
         name: AppRoute.guessForm.name,
         builder: (context, state) => const GuessSubmissionEditScreen(),
-      ),
-      GoRoute(
-        path: '/upload-photo',
-        name: AppRoute.uploadPhoto.name,
-        builder: (context, state) => const UploadPhotoScreen(),
       ),
       GoRoute(
         path: '/admin',
@@ -117,7 +110,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final publicPaths = ['/login', '/signup'];
       final emailVerifiedPaths = [
-        '/guess-form', '/profile', '/upload-photo', '/admin', '/admin/user-management', 
+        '/guess-form', '/profile', '/admin', '/admin/user-management', 
         '/admin/enter-baby-details', '/all-guesses', '/dev-area'
       ];
 

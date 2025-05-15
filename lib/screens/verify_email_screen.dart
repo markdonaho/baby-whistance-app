@@ -6,24 +6,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class VerifyEmailScreen extends ConsumerWidget {
+class VerifyEmailScreen extends ConsumerStatefulWidget {
   const VerifyEmailScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+}
+
+class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
+  bool _isResendingEmail = false;
+  bool _isCheckingStatus = false;
+  bool _isSigningOut = false;
+
+  @override
+  Widget build(BuildContext context) {
     // Setup listener for auth errors, potentially to show a SnackBar
     ref.listen<AsyncValue<firebase_auth.User?>>(authControllerProvider, (previous, state) {
       state.whenOrNull(
         error: (error, stackTrace) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${error.toString()}")),
-          );
+          if (mounted) { // Check if widget is still in the tree
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Error: ${error.toString()}")),
+            );
+          }
         },
       );
     });
 
-    final authUserAsyncValue = ref.watch(authControllerProvider.select((s) => s.value));
-    final firebase_auth.User? authUser = authUserAsyncValue;
+    final authUser = ref.watch(authControllerProvider).value;
 
     final Widget body = Center(
         child: SingleChildScrollView(
@@ -41,40 +51,88 @@ class VerifyEmailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () async {
+                  onPressed: _isResendingEmail || _isCheckingStatus || _isSigningOut ? null : () async {
+                    setState(() => _isResendingEmail = true);
                     try {
                       await ref.read(authControllerProvider.notifier).sendEmailVerification();
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Verification email resent!')),
                       );
+                    } on firebase_auth.FirebaseAuthException catch (e) {
+                      if (!mounted) return;
+                      String errorMessage = 'Failed to resend email. Please try again.';
+                      if (e.code == 'too-many-requests') {
+                        errorMessage = 'Too many requests to resend verification email. Please wait a while before trying again.';
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(errorMessage)),
+                      );
                     } catch (e) {
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Failed to resend email: ${e.toString()}')),
                       );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isResendingEmail = false);
+                      }
                     }
                   },
-                  child: const Text('Resend Verification Email'),
+                  child: _isResendingEmail 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                      : const Text('Resend Verification Email'),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () async {
-                    final isVerified = await ref.read(authControllerProvider.notifier).checkIsEmailVerified();
-                    // GoRouter will handle navigation if email is verified due to auth state change
-                    if (!isVerified && context.mounted) {
+                  onPressed: _isResendingEmail || _isCheckingStatus || _isSigningOut ? null : () async {
+                    setState(() => _isCheckingStatus = true);
+                    try {
+                      final isVerified = await ref.read(authControllerProvider.notifier).checkIsEmailVerified();
+                      // GoRouter will handle navigation if email is verified due to auth state change
+                      if (!isVerified && mounted) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please verify your email first.')),
+                        );
+                      }
+                    } catch (e) {
+                       if (!mounted) return;
                        ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please verify your email first.')),
+                        SnackBar(content: Text('Failed to check verification status: ${e.toString()}')),
                       );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isCheckingStatus = false);
+                      }
                     }
                   },
-                  child: const Text('I\'ve Verified / Refresh Status'),
+                  child: _isCheckingStatus
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('I\'ve Verified / Refresh Status'),
                 ),
                 const SizedBox(height: 24),
                 TextButton(
-                  onPressed: () async {
-                    await ref.read(authControllerProvider.notifier).signOut();
-                    // GoRouter will navigate to login screen on sign out
+                  onPressed: _isResendingEmail || _isCheckingStatus || _isSigningOut ? null : () async {
+                    setState(() => _isSigningOut = true);
+                    try {
+                      await ref.read(authControllerProvider.notifier).signOut();
+                      // GoRouter will navigate to login screen on sign out
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error signing out: ${e.toString()}')),
+                      );
+                    } finally {
+                      // No need to set _isSigningOut = false if navigating away, 
+                      // but good practice if there was a path where it didn't navigate.
+                      if (mounted) {
+                         setState(() => _isSigningOut = false); 
+                      }
+                    }
                   },
-                  child: const Text('Back to Login / Sign Out'),
+                  child: _isSigningOut
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Back to Login / Sign Out'),
                 ),
               ],
             ),

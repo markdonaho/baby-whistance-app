@@ -1,5 +1,5 @@
 import 'package:baby_whistance_app/features/app_status/app_status_service.dart';
-import 'package:baby_whistance_app/screens/guess_submission_edit_screen.dart' show hairColorOptions, eyeColorOptions, poundOptions, ounceOptions, inchOptions; // Reusing options
+import 'package:baby_whistance_app/screens/guess_submission_edit_screen.dart' show hairColorOptions, eyeColorOptions, poundOptions, ounceOptions, inchOptions, looksLikeOptions, brycenReactionOptions; // Reusing options and adding new options
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:baby_whistance_app/shared/widgets/app_scaffold.dart';
@@ -19,6 +19,8 @@ class _AdminEnterBabyDetailsScreenState extends ConsumerState<AdminEnterBabyDeta
   int? _selectedPounds;
   int? _selectedOunces;
   int? _selectedInches;
+  String? _actualLooksLikeValue;
+  String? _actualBrycenReactionValue;
   bool _isLoading = false;
 
   @override
@@ -33,6 +35,8 @@ class _AdminEnterBabyDetailsScreenState extends ConsumerState<AdminEnterBabyDeta
       _selectedInches = currentDetails['lengthInches'];
       _hairColorValue = currentDetails['hairColor'];
       _eyeColorValue = currentDetails['eyeColor'];
+      _actualLooksLikeValue = currentDetails['actualLooksLike'];
+      _actualBrycenReactionValue = currentDetails['actualBrycenReaction'];
     }
   }
 
@@ -57,9 +61,9 @@ class _AdminEnterBabyDetailsScreenState extends ConsumerState<AdminEnterBabyDeta
 
   Future<void> _handleSaveDetails() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedPounds == null || _selectedOunces == null || _selectedInches == null || _hairColorValue == null || _eyeColorValue == null) {
+      if (_selectedPounds == null || _selectedOunces == null || _selectedInches == null || _hairColorValue == null || _eyeColorValue == null || _actualLooksLikeValue == null || _actualBrycenReactionValue == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill all fields.')),
+          const SnackBar(content: Text('Please fill all fields, including looks like and Brycen\'s reaction.')),
         );
         return;
       }
@@ -73,6 +77,8 @@ class _AdminEnterBabyDetailsScreenState extends ConsumerState<AdminEnterBabyDeta
         'lengthInches': _selectedInches,
         'hairColor': _hairColorValue,
         'eyeColor': _eyeColorValue,
+        'actualLooksLike': _actualLooksLikeValue,
+        'actualBrycenReaction': _actualBrycenReactionValue,
       };
 
       try {
@@ -172,6 +178,10 @@ class _AdminEnterBabyDetailsScreenState extends ConsumerState<AdminEnterBabyDeta
               _buildDropdown("Hair Color", _hairColorValue, hairColorOptions, (val) => setState(() => _hairColorValue = val)),
               const SizedBox(height: 16),
               _buildDropdown("Eye Color", _eyeColorValue, eyeColorOptions, (val) => setState(() => _eyeColorValue = val)),
+              const SizedBox(height: 16),
+              _buildDropdown("Who Baby Looks Like", _actualLooksLikeValue, looksLikeOptions, (val) => setState(() => _actualLooksLikeValue = val)),
+              const SizedBox(height: 16),
+              _buildDropdown("Brycen's Predicted Reaction", _actualBrycenReactionValue, brycenReactionOptions, (val) => setState(() => _actualBrycenReactionValue = val)),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleSaveDetails,

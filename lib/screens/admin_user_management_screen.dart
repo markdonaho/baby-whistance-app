@@ -33,56 +33,68 @@ class AdminUserManagementScreen extends ConsumerWidget {
 
   void _showChangeRoleDialog(BuildContext context, WidgetRef ref, AppUser user) {
     AppUserRole selectedRole = user.role;
+    bool _isSavingRole = false; // Local state for dialog save button
+
     showDialog(
       context: context,
+      barrierDismissible: !_isSavingRole, // Prevent dismissing while saving
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text('Change Role for ${user.displayName ?? user.email}'),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return DropdownButton<AppUserRole>(
-                value: selectedRole,
-                onChanged: (AppUserRole? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      selectedRole = newValue;
+        return StatefulBuilder( // Wrap AlertDialog with StatefulBuilder
+          builder: (BuildContext context, StateSetter setStateDialog) {
+            return AlertDialog(
+              title: Text('Change Role for ${user.displayName ?? user.email}'),
+              content: DropdownButton<AppUserRole>(
+                  value: selectedRole,
+                  onChanged: _isSavingRole ? null : (AppUserRole? newValue) { // Disable dropdown while saving
+                    if (newValue != null) {
+                      setStateDialog(() {
+                        selectedRole = newValue;
+                      });
+                    }
+                  },
+                  items: AppUserRole.values.map<DropdownMenuItem<AppUserRole>>((AppUserRole value) {
+                    return DropdownMenuItem<AppUserRole>(
+                      value: value,
+                      child: Text(value.toString().split('.').last),
+                    );
+                  }).toList(),
+                ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: _isSavingRole ? null : () { // Disable cancel while saving
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+                ElevatedButton(
+                  onPressed: _isSavingRole ? null : () async { // Disable save while saving
+                    setStateDialog(() {
+                      _isSavingRole = true;
                     });
-                  }
-                },
-                items: AppUserRole.values.map<DropdownMenuItem<AppUserRole>>((AppUserRole value) {
-                  return DropdownMenuItem<AppUserRole>(
-                    value: value,
-                    child: Text(value.toString().split('.').last),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            ElevatedButton(
-              child: const Text('Save'),
-              onPressed: () async {
-                try {
-                  await ref.read(userManagementServiceProvider).updateUserRole(user.uid, selectedRole);
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Role for ${user.displayName ?? user.email} updated to ${selectedRole.toString().split('.').last}')),
-                  );
-                } catch (e) {
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to update role: ${e.toString()}')),
-                  );
-                }
-              },
-            ),
-          ],
+                    try {
+                      await ref.read(userManagementServiceProvider).updateUserRole(user.uid, selectedRole);
+                      if (!dialogContext.mounted) return;
+                      Navigator.of(dialogContext).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Role for ${user.displayName ?? user.email} updated to ${selectedRole.toString().split('.').last}')),
+                      );
+                    } catch (e) {
+                      if (!dialogContext.mounted) return;
+                      Navigator.of(dialogContext).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to update role: ${e.toString()}')),
+                      );
+                    } finally {
+                      // No need to set _isSavingRole back if dialog is popped.
+                    }
+                  },
+                  child: _isSavingRole
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Save'),
+                ),
+              ],
+            );
+          }
         );
       },
     );
