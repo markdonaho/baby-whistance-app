@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:baby_whistance_app/features/auth/application/auth_controller.dart';
+import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart'; // Updated import
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});

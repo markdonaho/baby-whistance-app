@@ -1,8 +1,9 @@
+import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:baby_whistance_app/features/auth/application/auth_controller.dart';
+// Removed: import 'package:baby_whistance_app/features/auth/application/auth_controller.dart';
 import 'package:baby_whistance_app/config/router/app_router.dart'; // For route names
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -10,7 +11,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<LoginScreen> createState() {
-    print('[LoginScreen] createState() CALLED');
     return _LoginScreenState();
   }
 }
@@ -24,83 +24,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    print('[LoginScreen] initState() CALLED');
   }
 
   @override
   void dispose() {
-    print('[LoginScreen] dispose() CALLED');
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    print('[LoginScreen] _login method CALLED.');
 
     if (_formKey.currentState!.validate()) {
-      print('[LoginScreen] Form validation SUCCEEDED.');
       setState(() {
         _isLoading = true;
       });
       try {
-        print('[LoginScreen] Attempting to call signInWithEmailAndPassword...');
         final User? user = await ref.read(authControllerProvider.notifier).signInWithEmailAndPassword(
               _emailController.text.trim(),
               _passwordController.text.trim(),
             );
         
-        print('[LoginScreen] Returned from AuthController.signInWithEmailAndPassword call.');
-        print('[LoginScreen] User object in LoginScreen: \${user?.toString()}');
-        print('[LoginScreen] User UID in LoginScreen: \${user?.uid}');
-        print('[LoginScreen] User Email in LoginScreen: \${user?.email}');
-        print('[LoginScreen] Is email verified in LoginScreen (from returned user): \${user?.emailVerified}');
 
         if (!mounted) {
-             print('[LoginScreen] Widget NOT MOUNTED after auth call and before navigation/logic. Returning.');
              return;
         }
-        print('[LoginScreen] Widget IS MOUNTED after auth call and before navigation/logic.');
 
         if (user != null && user.emailVerified == true) {
-          print('[LoginScreen] Condition: user != null && user.emailVerified == true. Attempting to navigate to home...');
           context.goNamed(AppRoute.home.name);
-          print('[LoginScreen] context.goNamed(AppRoute.home.name) CALLED.');
         } else if (user != null && user.emailVerified == false) {
-          print('[LoginScreen] Condition: user != null && user.emailVerified == false (email NOT verified).');
         } else if (user == null) {
-          print('[LoginScreen] Condition: user == null (login failed).');
         } else {
           // This case should ideally not be reached if user.emailVerified is a boolean.
-          print('[LoginScreen] Condition: Fallthrough. User: \${user?.uid}, EmailVerified: \${user?.emailVerified}');
         }
 
       } catch (e, stackTrace) {
-        print('[LoginScreen] EXCEPTION CAUGHT in _login: \${e.toString()}');
-        print('[LoginScreen] StackTrace: \${stackTrace.toString()}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("An unexpected error occurred: \${e.toString()}")),
+            SnackBar(content: Text("An unexpected error occurred: ${e.toString()}")),
           );
         }
       } finally {
-        print('[LoginScreen] Entering _login FINALLY block.');
         if (mounted) {
-          print('[LoginScreen] In _login FINALLY block. Widget IS mounted. Setting _isLoading = false.');
           setState(() {
             _isLoading = false;
           });
         } else {
-            print('[LoginScreen] In _login FINALLY block. Widget NOT mounted when trying to set _isLoading.');
         }
       }
     } else {
-      print('[LoginScreen] Form validation FAILED.');
     }
   }
 
   void _showForgotPasswordDialog(BuildContext context, WidgetRef ref) {
-    print('[LoginScreen] _showForgotPasswordDialog CALLED');
     final emailController = TextEditingController();
     showDialog(
       context: context,
@@ -163,9 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('[LoginScreen] build() CALLED');
     ref.listen<AsyncValue<dynamic>>(authControllerProvider, (_, state) {
-      print('[LoginScreen] authControllerProvider LISTENER triggered. State: ${state.toString()}');
       state.whenOrNull(
         error: (error, stackTrace) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -175,10 +149,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // loading: () { // Handled by _isLoading locally for the button }
       );
     });
-    print('[LoginScreen] build() - authControllerProvider listener SET UP');
 
     final authStateIsLoading = ref.watch(authControllerProvider.select((s) => s.isLoading));
-    print('[LoginScreen] build() - authControllerProvider.select((s) => s.isLoading) WATCHED. Value: $authStateIsLoading');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Login')),
@@ -248,9 +220,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // Ensure AppRoute anmes are correctly defined in your router
                     context.goNamed(AppRoute.signup.name);
                   },
-                  child: const Text('Don\'t have an account? Sign Up'),
+                  child: const Text('Create an account'),
                 ),
-                const SizedBox(height: 8.0),
+                const SizedBox(height: 8.0), // Space before forgot password
                 TextButton(
                   onPressed: () => _showForgotPasswordDialog(context, ref),
                   child: const Text('Forgot Password?'),

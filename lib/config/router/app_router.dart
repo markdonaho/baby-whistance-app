@@ -1,16 +1,16 @@
-import 'package:baby_whistance_app/features/auth/application/auth_controller.dart';
+import 'package:baby_whistance_app/features/auth/auth_service_consolidated.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Actual screen imports
-import 'package:baby_whistance_app/features/auth/presentation/screens/login_screen.dart';
-import 'package:baby_whistance_app/features/auth/presentation/screens/signup_screen.dart';
-import 'package:baby_whistance_app/features/auth/presentation/screens/verify_email_screen.dart';
-import 'package:baby_whistance_app/features/home/presentation/screens/home_screen.dart';
-import 'package:baby_whistance_app/features/upload/presentation/screens/upload_photo_screen.dart';
-import 'package:baby_whistance_app/features/admin/presentation/screens/admin_screen.dart';
-import 'package:baby_whistance_app/features/profile/presentation/screens/profile_screen.dart';
+import 'package:baby_whistance_app/screens/login_screen.dart';
+import 'package:baby_whistance_app/screens/signup_screen.dart';
+import 'package:baby_whistance_app/screens/verify_email_screen.dart';
+import 'package:baby_whistance_app/screens/home_screen.dart';
+import 'package:baby_whistance_app/screens/upload_photo_screen.dart';
+import 'package:baby_whistance_app/screens/admin_screen.dart';
+import 'package:baby_whistance_app/screens/profile_screen.dart';
 
 // Enum for route names to ensure type safety and centralize route management
 enum AppRoute {
@@ -25,13 +25,11 @@ enum AppRoute {
 
 // Provider for the GoRouter instance
 final appRouterProvider = Provider<GoRouter>((ref) {
-  print('[AppRouter] appRouterProvider CALLED (building GoRouter)');
   final authState = ref.watch(authControllerProvider);
-  print('[AppRouter] appRouterProvider - authControllerProvider WATCHED initially, state: ${authState.toString()}');
 
   return GoRouter(
     initialLocation: '/login',
-    debugLogDiagnostics: true, // This provides verbose GoRouter logging
+    debugLogDiagnostics: true, // This provides verbose GoRouter logging. Set to false for production.
     routes: [
       GoRoute(
         path: '/login',
@@ -70,26 +68,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) {
-      print('-----------------------------------------------------------------------');
-      print('[AppRouter] >>> GoRouter REDIRECT Function CALLED <<<');
-      print('[AppRouter] Current GoRouterState: location: ${state.location}, matchedLocation: ${state.matchedLocation}, name: ${state.name}, path: ${state.path}, fullPath: ${state.fullPath}, extra: ${state.extra}');
-
       final authControllerState = ref.read(authControllerProvider);
-      print('[GoRouter] AuthController state: ${authControllerState.toString()}');
 
       final loggedIn = authControllerState.when(
-        data: (user) {
-          print('[GoRouter] Auth state is DATA. User: ${user?.uid}, EmailVerified: ${user?.emailVerified}');
-          return user != null;
-        },
-        loading: () {
-          print('[GoRouter] Auth state is LOADING.');
-          return false;
-        },
-        error: (err, stack) {
-          print('[GoRouter] Auth state is ERROR: $err');
-          return false;
-        },
+        data: (user) => user != null,
+        loading: () => false, // Treat loading as not loggedIn for redirect purposes
+        error: (err, stack) => false, // Treat error as not loggedIn
       );
 
       final isVerified = authControllerState.when(
@@ -97,83 +81,49 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         loading: () => false,
         error: (_, __) => false,
       );
-      print('[GoRouter] Calculated loggedIn: $loggedIn, isVerified: $isVerified');
 
-      final currentRouteName = state.name;
       final currentLocationPath = state.matchedLocation;
+      final goingToLogin = currentLocationPath == '/login';
+      final goingToSignup = currentLocationPath == '/signup';
+      final goingToVerifyEmail = currentLocationPath == '/verify-email';
 
-      final goingToLogin = currentLocationPath == '/login' || currentRouteName == AppRoute.login.name;
-      final goingToSignup = currentLocationPath == '/signup' || currentRouteName == AppRoute.signup.name;
-      final goingToVerifyEmail = currentLocationPath == '/verify-email' || currentRouteName == AppRoute.verifyEmail.name;
+      final publicPaths = ['/login', '/signup'];
+      final emailVerifiedPaths = ['/home', '/profile', '/upload-photo', '/admin'];
 
-      print('[GoRouter] Path checks: currentLocationPath: $currentLocationPath, currentRouteName: $currentRouteName');
-      print('[GoRouter] goingToLogin: $goingToLogin, goingToSignup: $goingToSignup, goingToVerifyEmail: $goingToVerifyEmail');
-
-      const publicRouteNames = {
-        // AppRoute.login.name,
-        // AppRoute.signup.name,
-      };
-
-      final publicPaths = [
-        '/login',
-        '/signup',
-      ];
-
-      final authRequiredPaths = [
-        '/verify-email',
-      ];
-
-      final emailVerifiedPaths = [
-        '/home',
-        '/profile',
-        '/upload-photo',
-        '/admin',
-      ];
-
-      final isPublicRoute = publicPaths.contains(state.matchedLocation);
-      final isEmailVerifiedRoute = emailVerifiedPaths.contains(state.matchedLocation);
-
-      print('[GoRouter] Routing checks: isPublicRoute: $isPublicRoute, isEmailVerifiedRoute: $isEmailVerifiedRoute, goingToLogin: $goingToLogin, goingToSignup: $goingToSignup, goingToVerifyEmail: $goingToVerifyEmail');
+      final isPublicRoute = publicPaths.contains(currentLocationPath);
+      final isEmailVerifiedRoute = emailVerifiedPaths.contains(currentLocationPath);
 
       if (authControllerState is AsyncLoading) {
-        print('[GoRouter] Auth state is AsyncLoading, redirect returns null (no change).');
-        return null;
+        return null; // Do not redirect while auth state is loading
       }
 
       if (!loggedIn) {
-        print('[GoRouter] User NOT loggedIn.');
         if (!isPublicRoute) {
-          print('[GoRouter] User NOT loggedIn and NOT on public route. Redirecting to /login.');
-          return '/login';
+          return '/login'; // Not loggedIn and not on a public route, redirect to login
         }
-        print('[GoRouter] User NOT loggedIn but IS on public route. No redirect.');
-        return null;
+        return null; // Not loggedIn but on a public route, allow
       }
 
-      print('[GoRouter] User IS loggedIn.');
+      // User is loggedIn
       if (!isVerified) {
-        print('[GoRouter] User loggedIn but NOT verified.');
         if (isEmailVerifiedRoute) {
-          print('[GoRouter] User loggedIn, NOT verified, but trying to access verified-only route. Redirecting to /verify-email.');
-          return '/verify-email';
+          return '/verify-email'; // LoggedIn, not verified, trying to access verified-only route
         }
-        if (goingToLogin || goingToSignup || goingToVerifyEmail) {
-          print('[GoRouter] User loggedIn, NOT verified, but going to login/signup/verify. No redirect from here, allow.');
-          return null;
+        if (goingToLogin || goingToSignup) {
+          return '/verify-email'; // LoggedIn, not verified, but on login/signup, redirect to verify
         }
-        print('[GoRouter] User loggedIn, NOT verified, and not on a special page. Default redirect to /verify-email.');
-        return '/verify-email';
+        if (goingToVerifyEmail) {
+          return null; // LoggedIn, not verified, but already on verify page, allow
+        }
+        return '/verify-email'; // Default for loggedIn but not verified
       }
 
-      print('[GoRouter] User IS loggedIn AND IS verified.');
+      // User is loggedIn AND verified
       if (goingToLogin || goingToSignup || goingToVerifyEmail) {
-        print('[GoRouter] User loggedIn AND verified, but going to login/signup/verify. Redirecting to /home.');
-        return '/home';
+        return '/home'; // LoggedIn and verified, but on auth pages, redirect to home
       }
 
-      print('[AppRouter] User loggedIn AND verified. No specific redirect condition met. Returning null (allow navigation).');
-      print('-----------------------------------------------------------------------');
-      return null;
+      return null; // All other cases, allow navigation
     },
   );
 });

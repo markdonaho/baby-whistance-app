@@ -1,5 +1,13 @@
 # Baby Whistance App (Name TBD)
 
+## Next Development Focus (as of YYYY-MM-DD)
+
+- **Implement Guess Submission Feature:**
+    - Define Data Model for `guesses` (see Backend section for fields).
+    - Create UI Form in `HomeScreen` (or a new dedicated screen) for submitting guesses.
+    - Implement logic to save guesses to Firestore.
+    - Display the user's current guess(es) on the `HomeScreen`.
+
 A Flutter application for family and friends to guess the details of the new baby and share in the journey.
 
 ## Project Plan
@@ -31,8 +39,8 @@ A Flutter application for family and friends to guess the details of the new bab
 - [✅] Password Reset
 - [ ] Testing for Auth Logic
 
-### User Features (Home Page / Main User Flow) ⬜
-- [ ] **Guess Submission**
+### User Features (Home Page / Main User Flow) 🟨
+- [🟨] **Guess Submission**
     - [ ] Data Model for Guesses (user_id, date_of_birth_guess, time_of_birth_guess, weight_guess, length_guess, hair_color_guess, eye_color_guess, etc.)
     - [ ] UI Form for Submitting Guesses
     - [ ] Save Guesses to Firestore
@@ -118,90 +126,51 @@ A Flutter application for family and friends to guess the details of the new bab
     - Aggressive/premature navigation or widget replacement by GoRouter itself during the auth flow.
     - Deeper Flutter framework issue or subtle bug related to `async/await` and widget lifecycle.
 
-## Project Structure
+**Temporary Structure Change (for Debugging Auth):**
+- All authentication logic (models, repositories, providers, controller) has been temporarily consolidated into `lib/features/auth/auth_service_consolidated.dart`. This is to simplify debugging of the authentication flow. This structure will be reverted once the underlying issues are resolved.
 
-The project follows a feature-first directory structure to promote modularity and scalability.
+**Project Structure (Simplified for Debugging & Monolith Approach):**
+- All screen files have been moved to a top-level `lib/screens/` directory.
+- Feature-specific logic (other than auth, which is consolidated) has been temporarily streamlined or will be placed directly if simple enough.
 
 ```
 lib/
-├── main.dart                 # Main application entry point
+├── config/
+│   ├── router/
+│   │   └── app_router.dart   # GoRouter configuration
+│   └── theme/
+│       └── app_theme.dart    # App theme
+├── features/
+│   └── auth/
+│       ├── auth_service_consolidated.dart # CONSOLIDATED AUTH LOGIC
+│       └── auth_service_consolidated.g.dart # Generated for consolidated service
 ├── firebase_options.dart     # Firebase configuration (auto-generated)
-│
-├── config/                   # App-wide configurations
-│   └── router/
-│       └── app_router.dart   # GoRouter configuration, defines all app routes
-│
-├── core/                     # Core utilities, constants, base classes, error handling
-│   └── .gitkeep              # (e.g., utils/, constants/, exceptions/, di/)
-│
-├── shared/                   # Shared widgets, models, or services across features
-│   ├── models/               # Shared data models
-│   │   ├── app_user.dart     # User model for Firestore data
-│   │   └── .gitkeep
-│   ├── services/             # Shared application services
-│   │   └── .gitkeep
-│   └── widgets/              # Shared UI components
-│       └── .gitkeep
-│
-└── features/                 # Contains all feature-specific modules
-    ├── auth/                 # Authentication feature (login, signup, etc.)
-    │   ├── application/      # Business logic (Riverpod Providers, Controllers)
-    │   │   ├── auth_controller.dart
-    │   │   ├── auth_controller.g.dart
-    │   │   ├── auth_providers.dart
-    │   │   └── auth_providers.g.dart
-    │   ├── domain/           # Core business models and interfaces
-    │   │   └── repositories/ # Abstract contracts for data operations (e.g., AuthRepository)
-    │   ├── infrastructure/   # Data sources, repository implementations
-    │   │   └── repositories/ # Concrete implementations of repositories (e.g., FirebaseAuthRepository)
-    │   └── presentation/     # UI Layer
-    │       ├── screens/      # Screen-level widgets (e.g., LoginScreen, SignupScreen)
-    │       └── widgets/      # Reusable widgets specific to this feature - To be added
-    │
-    ├── home/                 # Home feature (main dashboard, etc.)
-    │   └── presentation/
-    │       └── screens/
-    │           └── home_screen.dart
-    │
-    ├── admin/                # Admin-specific features
-    │   └── presentation/
-    │       └── screens/
-    │           └── admin_screen.dart
-    │
-    ├── profile/              # User profile feature
-    │   └── presentation/
-    │       └── screens/
-    │           └── profile_screen.dart
-    │
-    ├── upload/               # Photo upload feature
-    │   └── presentation/
-    │       └── screens/
-    │           └── upload_photo_screen.dart
-    │
-    └── # (other features as they are developed) ...
+├── main.dart                 # Main application entry point
+├── screens/                  # ALL UI Screens
+│   ├── admin_screen.dart
+│   ├── home_screen.dart
+│   ├── login_screen.dart
+│   ├── profile_screen.dart
+│   ├── signup_screen.dart
+│   ├── upload_photo_screen.dart
+│   └── verify_email_screen.dart
+└── shared/
+    └── widgets/
+        └── app_scaffold.dart # Shared scaffold widget
 ```
 
-**Brief Description:**
+**Brief Description (Updated):**
 
 *   **`main.dart`**: Initializes the app, Firebase, and sets up `MaterialApp.router` with the `appRouter`.
 *   **`config/`**: Contains global application configuration.
-    *   `router/app_router.dart`: Manages all navigation logic using `GoRouter`, defining routes and their corresponding screens.
-*   **`core/`**: Houses fundamental utilities, global constants, base classes, error handling mechanisms, and potentially dependency injection setup. This code is foundational and used across the entire application.
-*   **`shared/`**: Contains elements that are reusable across multiple features but are not as foundational as those in `core/`.
-    *   `models/`: For data models that don't strictly belong to a single feature and are used by several (e.g., `AppUser`).
-    *   `services/`: For application-level services that might be consumed by various features (e.g., a global notification service).
-    *   `widgets/`: For common UI components (e.g., custom buttons, dialogs, list items) that are used in multiple feature modules. **Note:** Actively look for opportunities to extract reusable components from individual feature pages into this directory to maintain consistency and reduce code duplication.
-*   **`features/`**: Each subdirectory within `features/` represents a distinct functional module of the application (e.g., `auth`, `home`).
-    *   **`application/`**: Contains the business logic for the feature, such as state management (Riverpod Providers like `authControllerProvider` and `authRepositoryProvider`, Notifiers like `AuthController`), use cases, or application services.
-    *   **`domain/`** (Conceptual - To be added as needed): Includes the core business logic, entities, and interfaces (abstract repositories) for the feature, independent of any framework or infrastructure.
-        *   `repositories/`: Abstract contracts defining data operations (e.g., `AuthRepository`).
-    *   **`infrastructure/`** (Conceptual - To be added as needed): Implements the interfaces defined in the `domain` layer, handling external concerns like data fetching (repositories), device services, etc.
-        *   `repositories/`: Concrete implementations of repository interfaces (e.g., `FirebaseAuthRepository`).
-    *   **`presentation/`**: Holds all UI-related code for the feature.
-        *   `screens/`: Contains the top-level widgets that represent full screens or pages.
-        *   `widgets/`: Contains smaller, reusable UI components specific to this feature.
+    *   `router/app_router.dart`: Manages all navigation logic using `GoRouter`, defining routes and their corresponding screens (now located in `lib/screens/`).
+    *   `theme/app_theme.dart`: Defines the application's visual theme.
+*   **`features/auth/`**: Contains the consolidated authentication logic.
+    *   `auth_service_consolidated.dart`: (Temporary) All auth logic (model, repository, providers, controller).
+*   **`screens/`**: Contains all the UI screen files for the application.
+*   **`shared/widgets/`**: For common UI components (e.g., `AppScaffold`) used across multiple screens.
 
-*Global directories like `lib/models/`, `lib/widgets/`, `lib/services/` can be created if there's a need for truly shared components or utilities not specific to any single feature.*
+*Further consolidation of other features will follow as needed.*
 
 ## Development Setup
 
