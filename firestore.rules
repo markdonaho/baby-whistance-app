@@ -71,8 +71,7 @@ service cloud.firestore {
     match /app_status/{statusId} {
       // Allow admin to read and write the app_config document.
       // statusId will typically be 'app_config'.
-      allow read: if request.auth != null && 
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read: if request.auth != null;
       allow write: if request.auth != null && 
                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
                      statusId == 'app_config' &&
