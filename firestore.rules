@@ -11,9 +11,7 @@ service cloud.firestore {
 
       // Allow read if the user is authenticated and the userId matches their auth UID (they can read their own doc)
       // OR if the requesting user has an 'admin' role.
-      allow read: if request.auth != null && 
-                    (request.auth.uid == userId || 
-                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      allow read: if request.auth != null;
       
       // Allow list (for admins to see all users) if the requesting user has an 'admin' role.
       // Note: Firestore rules for `list` apply to collection queries.

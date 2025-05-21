@@ -285,16 +285,16 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       initialTime: TimeOfDay.now(),
       builder: (BuildContext context, Widget? child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
           child: child!,
         );
       },
     );
     if (picked != null) {
       setState(() {
-        final String formattedTime = 
-            "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
-        _timeController.text = formattedTime;
+        final now = DateTime.now();
+        final dt = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+        _timeController.text = DateFormat('h:mm a').format(dt);
       });
     }
   }
@@ -343,12 +343,31 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
 
       final guessNotifier = ref.read(guessControllerProvider.notifier);
 
+      // Convert display time (h:mm a) back to HH:mm for storage
+      String timeToStore = _timeController.text;
+      if (_timeController.text.isNotEmpty) {
+        try {
+          final parsedTime = DateFormat('h:mm a').parse(_timeController.text);
+          timeToStore = DateFormat('HH:mm').format(parsedTime);
+        } catch (e) {
+          // Should not happen if validator works, but good to have a fallback
+          print('Error parsing time for storage: ${_timeController.text} - $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Invalid time format. Please re-select the time.')),
+            );
+            setState(() { _isLoading = false; });
+          }
+          return;
+        }
+      }
+
       if (wasEditing) { // Use the stored boolean
         success = await guessNotifier.updateGuess(
           guessId: _existingGuess!.id!,
           originalSubmittedAt: _existingGuess!.submittedAt,
           dateGuess: dateGuess, 
-          timeGuess: _timeController.text,
+          timeGuess: timeToStore,
           weightGuess: totalOunces,
           lengthGuess: totalInches,
           hairColorGuess: _hairColorValue!,
@@ -359,7 +378,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
       } else {
         success = await guessNotifier.submitGuess(
           dateGuess: dateGuess,
-          timeGuess: _timeController.text,
+          timeGuess: timeToStore,
           weightGuess: totalOunces,
           lengthGuess: totalInches,
           hairColorGuess: _hairColorValue!,
@@ -502,7 +521,7 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
                 controller: _timeController,
                 decoration: InputDecoration(
                   labelText: 'Time of Birth Guess',
-                  hintText: 'HH:MM (24-hour format)',
+                  hintText: 'Select time (e.g. 10:30 AM)',
                    suffixIcon: IconButton(
                     icon: const Icon(Icons.access_time),
                     onPressed: () => _selectTime(context),
@@ -513,8 +532,8 @@ class _GuessSubmissionFormState extends ConsumerState<GuessSubmissionForm> {
                   if (value == null || value.isEmpty) {
                     return 'Please select a time';
                   }
-                  if (!RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$').hasMatch(value)) {
-                     return 'Please use HH:MM format';
+                  if (!RegExp(r'^\d{1,2}:\d{2} (AM|PM)$').hasMatch(value)) {
+                     return 'Please select a valid time';
                   }
                   return null;
                 },
